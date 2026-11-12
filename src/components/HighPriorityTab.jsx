@@ -75,7 +75,7 @@ export function HighPriorityTab({
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "14px", fontSize: "0.82rem", color: "var(--text-secondary)" }}>
                     <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                      <MapPin size={12} color="#EF4444" /> {b.locality} (PIN {b.pinCode})
+                      <MapPin size={12} color="#EF4444" /> {b.city || b.locality}, {b.state} {b.pinCode ? `(PIN ${b.pinCode})` : ""}
                     </span>
                     <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                       <Star size={12} fill="#FBBF24" color="#FBBF24" /> {b.rating}★ ({b.reviewCount} reviews)
@@ -104,12 +104,13 @@ export function HighPriorityTab({
 
               {/* Weighted Score Breakdown Chips */}
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", margin: "12px 0", background: "rgba(0,0,0,0.25)", padding: "10px 14px", borderRadius: "8px", fontSize: "0.75rem" }}>
-                <span style={{ color: "var(--text-muted)", marginRight: "4px" }}>Rubric Breakdown:</span>
-                <span className="config-chip">Web Absence/Gaps: <strong style={{ color: "#EF4444" }}>{bd.websiteGaps || 25}/25</strong></span>
-                <span className="config-chip">Missing Conversion CTA: <strong style={{ color: "#F59E0B" }}>{bd.conversionGaps || 20}/20</strong></span>
-                <span className="config-chip">Local SEO Gaps: <strong style={{ color: "#06B6D4" }}>{bd.localSeoGaps || 18}/20</strong></span>
-                <span className="config-chip">Competitor Pressure: <strong style={{ color: "#818CF8" }}>{bd.competitorAdvantage || 14}/15</strong></span>
-                <span className="config-chip">Review Demand: <strong style={{ color: "#10B981" }}>{bd.customerDemand || 8}/10</strong></span>
+                <span style={{ color: "var(--text-muted)", marginRight: "4px" }}>100-Pt Rubric:</span>
+                <span className="config-chip">No Website: <strong style={{ color: "#EF4444" }}>+{bd.websiteGaps || 40} pts</strong></span>
+                <span className="config-chip">Social Only: <strong style={{ color: "#F59E0B" }}>+{bd.socialMediaOnly || 15} pts</strong></span>
+                <span className="config-chip">Active GMB: <strong style={{ color: "#06B6D4" }}>+{bd.activeListing || 10} pts</strong></span>
+                <span className="config-chip">Verified Phone: <strong style={{ color: "#10B981" }}>+{bd.verifiedPhone || 15} pts</strong></span>
+                <span className="config-chip">Rating &gt;4.0★: <strong style={{ color: "#FBBF24" }}>+{bd.ratingAbove4 || 10} pts</strong></span>
+                <span className="config-chip">50+ Reviews: <strong style={{ color: "#818CF8" }}>+{bd.reviewsAbove50 || 10} pts</strong></span>
               </div>
 
               {/* Rationale and Strategy */}

@@ -11,7 +11,8 @@ import {
   FileSpreadsheet, 
   TrendingUp
 } from "lucide-react";
-import { DELHI_BUSINESSES, DELHI_LOCALITIES } from "./data/delhiBusinesses";
+import { PAN_INDIA_BUSINESSES, ALL_INDIAN_STATES, DELHI_LOCALITIES } from "./data/panIndiaBusinesses";
+import { deduplicateLeads } from "./utils/discoveryEngine";
 import { Header } from "./components/Header";
 import { OverviewTab } from "./components/OverviewTab";
 import { AllBusinessesTab } from "./components/AllBusinessesTab";
@@ -24,24 +25,30 @@ import { WebsiteAuditTab } from "./components/WebsiteAuditTab";
 import { PitchGeneratorTab } from "./components/PitchGeneratorTab";
 import { ExportTab } from "./components/ExportTab";
 import { BusinessDetailModal } from "./components/BusinessDetailModal";
+import { FloatingAIChatbot } from "./components/FloatingAIChatbot";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [businesses, setBusinesses] = useState(PAN_INDIA_BUSINESSES);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [modalInitialTab, setModalInitialTab] = useState("summary");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
-  const [selectedLocalityFilter, setSelectedLocalityFilter] = useState("All Delhi");
+  const [selectedLocalityFilter, setSelectedLocalityFilter] = useState("All India");
 
-  const totalLeads = DELHI_BUSINESSES.length;
-  const noWebsiteCount = DELHI_BUSINESSES.filter(
+  const totalLeads = businesses.length;
+  const noWebsiteCount = businesses.filter(
     (b) => b.websiteStatus === "No" || b.websiteStatus === "Unverified"
   ).length;
-  const highPriorityCount = DELHI_BUSINESSES.filter((b) => b.opportunityScore >= 80).length;
+  const highPriorityCount = businesses.filter((b) => b.opportunityScore >= 80).length;
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleAddDiscoveredBusinesses = (newLeads) => {
+    setBusinesses((prev) => deduplicateLeads([...prev, ...newLeads]));
   };
 
   const handleSelectBusiness = (business, action = "summary") => {
@@ -58,8 +65,8 @@ export default function App() {
     }
   };
 
-  const handleLocalityFilterChange = (locality) => {
-    setSelectedLocalityFilter(locality);
+  const handleLocalityFilterChange = (localityOrState) => {
+    setSelectedLocalityFilter(localityOrState);
     setActiveTab("all-businesses");
   };
 
@@ -83,9 +90,7 @@ export default function App() {
         totalCount={totalLeads}
         noWebsiteCount={noWebsiteCount}
         highPriorityCount={highPriorityCount}
-        selectedLocality={selectedLocalityFilter}
-        onSelectLocality={setSelectedLocalityFilter}
-        localities={DELHI_LOCALITIES}
+        activeStateFilter={selectedLocalityFilter}
       />
 
       {/* 10 Navigation Tabs Bar */}
@@ -117,7 +122,7 @@ export default function App() {
       <main className="main-content">
         {activeTab === "overview" && (
           <OverviewTab 
-            businesses={DELHI_BUSINESSES}
+            businesses={businesses}
             onSelectBusiness={handleSelectBusiness}
             onNavigateTab={setActiveTab}
           />
@@ -125,7 +130,7 @@ export default function App() {
 
         {activeTab === "all-businesses" && (
           <AllBusinessesTab 
-            businesses={DELHI_BUSINESSES}
+            businesses={businesses}
             onSelectBusiness={handleSelectBusiness}
             localities={DELHI_LOCALITIES}
           />
@@ -133,21 +138,21 @@ export default function App() {
 
         {activeTab === "no-website" && (
           <NoWebsiteTab 
-            businesses={DELHI_BUSINESSES}
+            businesses={businesses}
             onSelectBusiness={handleSelectBusiness}
           />
         )}
 
         {activeTab === "has-website" && (
           <HasWebsiteTab 
-            businesses={DELHI_BUSINESSES}
+            businesses={businesses}
             onSelectBusiness={handleSelectBusiness}
           />
         )}
 
         {activeTab === "high-priority" && (
           <HighPriorityTab 
-            businesses={DELHI_BUSINESSES}
+            businesses={businesses}
             onSelectBusiness={handleSelectBusiness}
             onCopyText={showToast}
           />
@@ -155,7 +160,7 @@ export default function App() {
 
         {activeTab === "competitor-analysis" && (
           <CompetitorTab 
-            businesses={DELHI_BUSINESSES}
+            businesses={businesses}
             initialBusiness={selectedBusiness}
             onSelectBusiness={handleSelectBusiness}
           />
@@ -163,14 +168,16 @@ export default function App() {
 
         {activeTab === "locality-analysis" && (
           <LocalityTab 
-            businesses={DELHI_BUSINESSES}
+            businesses={businesses}
             onSelectLocalityFilter={handleLocalityFilterChange}
+            onDiscoveryAdd={handleAddDiscoveredBusinesses}
+            onShowToast={showToast}
           />
         )}
 
         {activeTab === "website-audit" && (
           <WebsiteAuditTab 
-            businesses={DELHI_BUSINESSES}
+            businesses={businesses}
             initialBusiness={selectedBusiness}
             onSelectBusiness={handleSelectBusiness}
           />
@@ -178,7 +185,7 @@ export default function App() {
 
         {activeTab === "pitch-generator" && (
           <PitchGeneratorTab 
-            businesses={DELHI_BUSINESSES}
+            businesses={businesses}
             initialBusiness={selectedBusiness}
             onShowToast={showToast}
           />
@@ -186,7 +193,7 @@ export default function App() {
 
         {activeTab === "export-reports" && (
           <ExportTab 
-            businesses={DELHI_BUSINESSES}
+            businesses={businesses}
             onShowToast={showToast}
           />
         )}
@@ -201,6 +208,12 @@ export default function App() {
           onShowToast={showToast}
         />
       )}
+
+      {/* Floating AI Chatbot Widget */}
+      <FloatingAIChatbot 
+        businesses={businesses}
+        onSelectBusiness={handleSelectBusiness}
+      />
 
       {/* Toast Notification */}
       {toastMessage && (

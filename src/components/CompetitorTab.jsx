@@ -63,7 +63,7 @@ export function CompetitorTab({
           >
             {businesses.map((b) => (
               <option key={b.id} value={b.id}>
-                {b.name} ({b.locality}) — Score: {b.opportunityScore}/100
+                {b.name} ({b.city || b.locality}, {b.state}) — Score: {b.opportunityScore}/100
               </option>
             ))}
           </select>
@@ -75,7 +75,7 @@ export function CompetitorTab({
         <h3 style={{ fontSize: "1.15rem", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
           <span>⚔️ Direct 5 KM Head-to-Head Comparison:</span>
           <span style={{ color: "var(--accent-cyan)" }}>{currentBusiness?.name}</span>
-          <span style={{ fontSize: "0.82rem", color: "var(--text-muted)", fontWeight: "normal" }}>({currentBusiness?.locality})</span>
+          <span style={{ fontSize: "0.82rem", color: "var(--text-muted)", fontWeight: "normal" }}>({currentBusiness?.city || currentBusiness?.locality}, {currentBusiness?.state})</span>
         </h3>
 
         <div style={{ overflowX: "auto" }}>

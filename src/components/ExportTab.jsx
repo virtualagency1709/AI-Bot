@@ -4,21 +4,42 @@ import {
   Download, 
   Layers, 
   ShieldCheck, 
-  FileText
+  FileText,
+  Filter,
+  CheckCircle2
 } from "lucide-react";
 import { exportLeadsToExcel, exportLeadsToCsv } from "../utils/excelExport";
+import { ALL_INDIAN_STATES } from "../data/panIndiaBusinesses";
 
 export function ExportTab({ 
-  businesses, 
+  businesses = [], 
   onShowToast 
 }) {
   const [downloading, setDownloading] = useState(false);
+  const [exportState, setExportState] = useState("All India");
+  const [exportScope, setExportScope] = useState("all"); // 'all', 'no_website', 'high_priority'
+
+  // Filter businesses according to user selection
+  const scopedBusinesses = businesses.filter((b) => {
+    const matchesState = exportState === "All India" || b.state === exportState;
+    let matchesScope = true;
+    if (exportScope === "no_website") {
+      matchesScope = b.websiteStatus === "No" || b.websiteStatus === "Unverified";
+    } else if (exportScope === "high_priority") {
+      matchesScope = b.opportunityScore >= 80;
+    }
+    return matchesState && matchesScope;
+  });
 
   const handleExcelExport = () => {
     setDownloading(true);
     try {
-      exportLeadsToExcel(businesses);
-      if (onShowToast) onShowToast("7-Sheet Excel Report downloaded successfully!");
+      const stateSuffix = exportState === "All India" ? "PanIndia" : exportState.replace(/\s+/g, "");
+      const scopeSuffix = exportScope === "no_website" ? "_NoWebsite" : exportScope === "high_priority" ? "_HighPriority" : "";
+      const filename = `VirtualAgency_${stateSuffix}_CarDetailing_Prospects${scopeSuffix}_2026.xlsx`;
+      
+      exportLeadsToExcel(scopedBusinesses, filename);
+      if (onShowToast) onShowToast(`7-Sheet Excel Report (${scopedBusinesses.length} leads) downloaded!`);
     } catch (err) {
       console.error("Export error:", err);
       alert("Failed to export Excel file. Please try again.");
@@ -29,8 +50,12 @@ export function ExportTab({
 
   const handleCsvExport = () => {
     try {
-      exportLeadsToCsv(businesses);
-      if (onShowToast) onShowToast("CSV leads file downloaded successfully!");
+      const stateSuffix = exportState === "All India" ? "PanIndia" : exportState.replace(/\s+/g, "");
+      const scopeSuffix = exportScope === "no_website" ? "_NoWebsite" : exportScope === "high_priority" ? "_HighPriority" : "";
+      const filename = `VirtualAgency_${stateSuffix}_CarDetailing_Leads${scopeSuffix}_2026.csv`;
+
+      exportLeadsToCsv(scopedBusinesses, filename);
+      if (onShowToast) onShowToast(`CSV leads file (${scopedBusinesses.length} leads) downloaded!`);
     } catch (err) {
       console.error("CSV Export error:", err);
       alert("Failed to export CSV file. Please try again.");
@@ -40,43 +65,43 @@ export function ExportTab({
   const sheetsInfo = [
     {
       num: 1,
-      name: "All Leads",
-      desc: "Complete master record of all 24 discovered Delhi detailing studios with rating, reviews, website status, opportunity score, lead channel, and full address.",
-      count: businesses.length
+      name: "Pan-India All Leads",
+      desc: "Complete master record of discovered car detailing studios across India with rating, reviews, website status, 21 complete data fields, opportunity score, lead channel, and full address.",
+      count: scopedBusinesses.length
     },
     {
       num: 2,
-      name: "No Website",
-      desc: "Target list of detailing studios without a website. Tailored for pitching Virtual Agency's ₹25,000–₹40,000 website packages.",
-      count: businesses.filter(b => b.websiteStatus === "No" || b.websiteStatus === "Unverified").length
+      name: "No Website Prospects",
+      desc: "Target list of studios without an official website. Tailored for pitching Virtual Agency's ₹30,000–₹50,000 website & booking engine packages.",
+      count: scopedBusinesses.filter(b => b.websiteStatus === "No" || b.websiteStatus === "Unverified").length
     },
     {
       num: 3,
-      name: "Website Audit",
-      desc: "13-point technical and conversion audit for businesses with websites (Mobile friendliness, speed score, HTTPS, WhatsApp widget, schema markup).",
-      count: businesses.length
+      name: "Technical Website Audit",
+      desc: "Comprehensive 13-point technical audit for studios with websites (Mobile friendliness, speed score, HTTPS, WhatsApp widget, schema markup, missing PPF landing pages).",
+      count: scopedBusinesses.length
     },
     {
       num: 4,
-      name: "Competitors",
-      desc: "5 KM radius competitive intelligence matrix comparing prospect vs nearby studios on rating, reviews, and digital advantage.",
-      count: "50+ Pairs"
+      name: "Competitors Radar",
+      desc: "5 KM radius competitive intelligence matrix comparing prospect vs nearby studios on rating, review count, and digital advantage.",
+      count: "Multi-Hub"
     },
     {
       num: 5,
-      name: "High-Priority Leads",
-      desc: "Pre-screened hot prospects (Score 80–100) complete with personalized Hinglish WhatsApp pitches and cold calling scripts.",
-      count: businesses.filter(b => b.opportunityScore >= 80).length
+      name: "High-Priority Pitches",
+      desc: "Pre-screened hot prospects (Score 80–100) complete with personalized English, Hindi / Hinglish WhatsApp pitches, and cold calling scripts.",
+      count: scopedBusinesses.filter(b => b.opportunityScore >= 80).length
     },
     {
       num: 6,
-      name: "Marketing Recommendations",
+      name: "Marketing Packages",
       desc: "Strategic service packages, implementation plans, business ROI justification, and suggested agency pricing in INR.",
-      count: businesses.length
+      count: scopedBusinesses.length
     },
     {
       num: 7,
-      name: "Research Sources",
+      name: "Agency Credentials & Sources",
       desc: "Methodology audit, Google Maps data verification logs, technical audit protocols, and Virtual Agency credentials.",
       count: "Verified"
     }
@@ -93,14 +118,14 @@ export function ExportTab({
                 <FileSpreadsheet size={12} /> Enterprise Export Suite
               </span>
               <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                Multi-Sheet Excel (.xlsx) & CSV Generator
+                Pan-India Multi-Sheet Excel (.xlsx) & CSV Generator
               </span>
             </div>
             <h2 style={{ fontSize: "1.3rem", marginBottom: "8px" }}>
-              Export Full Lead Database & Competitor Intelligence
+              Export Nationwide Lead Database & Competitor Intelligence
             </h2>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem", maxWidth: "850px" }}>
-              Generate structured, agency-ready Excel workbooks formatted into 7 dedicated sheets. Ideal for CRM imports, sales representative cold calling lists, or client presentation decks.
+              Generate structured, agency-ready Excel workbooks formatted into 7 dedicated sheets. Filter by State or export all 36 Indian States and Union Territories. Ideal for CRM imports, sales representative cold calling lists, or client presentation decks.
             </p>
           </div>
 
@@ -111,15 +136,56 @@ export function ExportTab({
               onClick={handleExcelExport}
               disabled={downloading}
             >
-              <Download size={18} /> {downloading ? "Generating Sheets..." : "Download 7-Sheet Excel (.xlsx)"}
+              <Download size={18} /> {downloading ? "Generating Sheets..." : `Download 7-Sheet Excel (${scopedBusinesses.length} Leads)`}
             </button>
             <button 
               className="btn-secondary"
               style={{ padding: "12px 18px", fontSize: "0.92rem" }}
               onClick={handleCsvExport}
             >
-              <FileText size={16} /> Export CSV (.csv)
+              <FileText size={16} /> Export CSV ({scopedBusinesses.length})
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Scope and Filter Selector Box */}
+      <div className="glass-card" style={{ marginBottom: "24px", padding: "16px 20px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--text-primary)", fontSize: "0.88rem", fontWeight: 600 }}>
+            <Filter size={16} color="#6366F1" /> Export Filters:
+          </div>
+
+          <div>
+            <select
+              className="custom-select"
+              value={exportState}
+              onChange={(e) => setExportState(e.target.value)}
+              style={{ minWidth: "200px" }}
+            >
+              <option value="All India">State: Pan-India (All 36 States/UTs)</option>
+              {ALL_INDIAN_STATES.map((st) => (
+                <option key={st} value={st}>{st}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <select
+              className="custom-select"
+              value={exportScope}
+              onChange={(e) => setExportScope(e.target.value)}
+              style={{ minWidth: "200px" }}
+            >
+              <option value="all">Scope: All Discovered Leads</option>
+              <option value="no_website">Target: No Website Leads Only</option>
+              <option value="high_priority">Target: High Priority (Score 80–100)</option>
+            </select>
+          </div>
+
+          <div style={{ marginLeft: "auto", fontSize: "0.85rem", color: "#34D399", fontWeight: 600 }}>
+            <CheckCircle2 size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
+            {scopedBusinesses.length} leads ready for export
           </div>
         </div>
       </div>

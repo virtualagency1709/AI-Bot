@@ -99,7 +99,7 @@ export function WebsiteAuditTab({
           >
             {businesses.map((b) => (
               <option key={b.id} value={b.id}>
-                {b.name} ({b.locality}) — {b.websiteStatus === "Yes" ? "Website Active" : "No Website"}
+                {b.name} ({b.city || b.locality}, {b.state}) — {b.websiteStatus === "Yes" ? "Website Active" : "No Website"}
               </option>
             ))}
           </select>

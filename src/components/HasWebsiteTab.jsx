@@ -19,7 +19,9 @@ export function HasWebsiteTab({
     (b) => b.websiteStatus === "Yes"
   ).filter((b) => 
     b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.locality.toLowerCase().includes(searchTerm.toLowerCase())
+    (b.city && b.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (b.state && b.state.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (b.locality && b.locality.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (

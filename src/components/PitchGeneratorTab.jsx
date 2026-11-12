@@ -10,9 +10,11 @@ import {
   Check, 
   Target,
   Send,
-  MapPin
+  MapPin,
+  ExternalLink
 } from "lucide-react";
 import { generateAllPitches } from "../utils/pitchGenerator";
+import { VIRTUAL_AGENCY_CONTACT } from "../config/agencyContact";
 
 function InstagramIcon({ size = 14, color = "currentColor" }) {
   return (
@@ -32,7 +34,7 @@ export function PitchGeneratorTab({
   const [selectedBusinessId, setSelectedBusinessId] = useState(
     initialBusiness?.id || businesses[0]?.id
   );
-  const [activeFormat, setActiveFormat] = useState("whatsapp"); // 'whatsapp', 'english', 'instagram', 'calling', 'followup', 'summary'
+  const [activeFormat, setActiveFormat] = useState("whatsapp"); // 'whatsapp', 'demo_hindi', 'demo_english', 'english', 'instagram', 'calling', 'followup', 'summary'
   const [copiedKey, setCopiedKey] = useState(null);
 
   const currentBusiness = businesses.find((b) => b.id === selectedBusinessId) || businesses[0];
@@ -47,7 +49,9 @@ export function PitchGeneratorTab({
 
   const formats = [
     { id: "whatsapp", label: "WhatsApp (Natural Hinglish)", icon: MessageCircle, badge: "Most Popular" },
-    { id: "english", label: "Professional English (Email)", icon: Mail },
+    { id: "demo_hindi", label: "Website Demo Invite (Hindi)", icon: MessageCircle },
+    { id: "demo_english", label: "Website Demo Invite (English)", icon: Sparkles },
+    { id: "english", label: "Professional Email Pitch", icon: Mail },
     { id: "instagram", label: "Instagram DM", icon: InstagramIcon },
     { id: "calling", label: "Cold Calling Script (SDR)", icon: PhoneCall, badge: "5-Stage Script" },
     { id: "followup", label: "48h Follow-up", icon: Clock },
@@ -56,10 +60,12 @@ export function PitchGeneratorTab({
 
   const getActiveText = () => {
     switch (activeFormat) {
-      case "whatsapp": return pitches.whatsappPitch;
-      case "english": return pitches.englishPitch;
+      case "whatsapp": return pitches.hinglishWhatsApp || pitches.whatsappPitch;
+      case "demo_hindi": return pitches.websiteDemoHindiPitch || pitches.demoInviteWhatsApp;
+      case "demo_english": return pitches.websiteDemoEnglishPitch;
+      case "english": return pitches.emailPitch || pitches.englishPitch;
       case "instagram": return pitches.instagramDm;
-      case "calling": return pitches.callingScript;
+      case "calling": return pitches.coldCallScript || pitches.callingScript;
       case "followup": return pitches.followUpMessage;
       case "summary": return pitches.auditSummary;
       default: return "";
@@ -92,7 +98,7 @@ export function PitchGeneratorTab({
             <div style={{ color: "var(--text-muted)", fontSize: "0.76rem" }}>Agency Rep Info</div>
             <strong style={{ color: "#34D399", fontSize: "0.95rem" }}>Virtual Agency, India</strong>
             <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-              7838056998 | info@virtualagency.in
+              {VIRTUAL_AGENCY_CONTACT.phoneDisplay} | {VIRTUAL_AGENCY_CONTACT.email}
             </div>
           </div>
         </div>
@@ -112,7 +118,7 @@ export function PitchGeneratorTab({
           >
             {businesses.map((b) => (
               <option key={b.id} value={b.id}>
-                {b.name} ({b.locality}) — {b.opportunityScore}/100 [{b.priority.replace(" prospect", "")}]
+                {b.name} ({b.city || b.locality}, {b.state}) — {b.opportunityScore}/100 [{b.priority?.replace(" prospect", "")}]
               </option>
             ))}
           </select>

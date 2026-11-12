@@ -9,41 +9,77 @@ import {
   Eye, 
   Users, 
   LayoutGrid,
-  Table as TableIcon
+  Table as TableIcon,
+  Phone,
+  ArrowUpDown
 } from "lucide-react";
 import { getPriorityBadgeColor } from "../utils/scoring";
+import { ALL_INDIAN_STATES } from "../data/panIndiaBusinesses";
 
 export function AllBusinessesTab({ 
-  businesses, 
+  businesses = [], 
   onSelectBusiness, 
-  localities 
+  localities = []
 }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedLocality, setSelectedLocality] = useState("All Delhi");
+  const [selectedState, setSelectedState] = useState("All India");
+  const [selectedLocality, setSelectedLocality] = useState("All");
   const [websiteFilter, setWebsiteFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [channelFilter, setChannelFilter] = useState("all");
+  const [hasPhoneOnly, setHasPhoneOnly] = useState(false);
   const [minRating, setMinRating] = useState("0");
   const [minReviews, setMinReviews] = useState("0");
+  const [sortBy, setSortBy] = useState("score_desc");
   const [viewMode, setViewMode] = useState("table"); // 'table' or 'grid'
+
+  // Dynamic available cities based on selected state
+  const availableCities = React.useMemo(() => {
+    const list = new Set();
+    businesses.forEach((b) => {
+      if (selectedState === "All India" || b.state === selectedState) {
+        if (b.city) list.add(b.city);
+        else if (b.locality) list.add(b.locality);
+      }
+    });
+    return ["All", ...Array.from(list).sort()];
+  }, [businesses, selectedState]);
 
   // Filter logic
   const filteredBusinesses = businesses.filter((b) => {
     // Search
+    const term = searchTerm.toLowerCase();
     const matchesSearch = 
-      b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.locality.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (b.phone && b.phone.includes(searchTerm)) ||
-      b.address.toLowerCase().includes(searchTerm.toLowerCase());
+      !term ||
+      b.name.toLowerCase().includes(term) ||
+      (b.city && b.city.toLowerCase().includes(term)) ||
+      (b.state && b.state.toLowerCase().includes(term)) ||
+      (b.locality && b.locality.toLowerCase().includes(term)) ||
+      (b.phone && b.phone.includes(term)) ||
+      (b.address && b.address.toLowerCase().includes(term));
     
-    // Locality
-    const matchesLocality = selectedLocality === "All Delhi" || b.locality === selectedLocality;
+    // State
+    const matchesState = selectedState === "All India" || b.state === selectedState;
 
-    // Website filter
-    const matchesWebsite = 
-      websiteFilter === "all" ||
-      (websiteFilter === "has_website" && b.websiteStatus === "Yes") ||
-      (websiteFilter === "no_website" && (b.websiteStatus === "No" || b.websiteStatus === "Unverified"));
+    // Locality / City
+    const matchesLocality = 
+      selectedLocality === "All" || 
+      b.city === selectedLocality || 
+      b.locality === selectedLocality;
+
+    // Website filter & Category
+    let matchesWebsite = true;
+    if (websiteFilter === "no_website") {
+      matchesWebsite = b.websiteStatus === "No" || b.websiteStatus === "Unverified";
+    } else if (websiteFilter === "has_website") {
+      matchesWebsite = b.websiteStatus === "Yes";
+    } else if (websiteFilter === "social_only") {
+      matchesWebsite = b.websiteCategory === "SOCIAL MEDIA ONLY";
+    } else if (websiteFilter === "directory_only") {
+      matchesWebsite = b.websiteCategory === "DIRECTORY LISTING ONLY";
+    } else if (websiteFilter === "no_website_priority") {
+      matchesWebsite = b.websiteCategory === "NO WEBSITE – HIGH PRIORITY";
+    }
 
     // Priority filter
     const matchesPriority = 
@@ -54,7 +90,10 @@ export function AllBusinessesTab({
 
     // Channel filter
     const matchesChannel = 
-      channelFilter === "all" || b.leadChannelType.toLowerCase().includes(channelFilter.toLowerCase());
+      channelFilter === "all" || (b.leadChannelType && b.leadChannelType.toLowerCase().includes(channelFilter.toLowerCase()));
+
+    // Has verified phone
+    const matchesPhone = !hasPhoneOnly || b.hasPhone;
 
     // Min rating
     const matchesRating = b.rating >= parseFloat(minRating);
@@ -62,45 +101,79 @@ export function AllBusinessesTab({
     // Min reviews
     const matchesReviews = b.reviewCount >= parseInt(minReviews, 10);
 
-    return matchesSearch && matchesLocality && matchesWebsite && matchesPriority && matchesChannel && matchesRating && matchesReviews;
+    return matchesSearch && matchesState && matchesLocality && matchesWebsite && matchesPriority && matchesChannel && matchesPhone && matchesRating && matchesReviews;
+  });
+
+  // Sorting logic
+  const sortedBusinesses = [...filteredBusinesses].sort((a, b) => {
+    if (sortBy === "score_desc") return b.opportunityScore - a.opportunityScore;
+    if (sortBy === "reviews_desc") return b.reviewCount - a.reviewCount;
+    if (sortBy === "rating_desc") return b.rating - a.rating;
+    if (sortBy === "name_asc") return a.name.localeCompare(b.name);
+    if (sortBy === "state_asc") return (a.state || "").localeCompare(b.state || "");
+    return 0;
   });
 
   return (
     <div className="all-businesses-container">
       {/* Header and Filter Drawer */}
       <div className="filter-bar-container">
+        {/* Row 1: Search, State, City, Website Category, Priority, View Toggle */}
         <div className="filter-row">
           <div className="search-input-wrap">
             <Search size={18} />
             <input 
               type="text" 
               className="custom-input" 
-              placeholder="Search by studio name, locality, address or phone..." 
+              placeholder="Search by studio name, state, city or phone..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
+          {/* State Filter */}
+          <select 
+            className="custom-select" 
+            value={selectedState} 
+            onChange={(e) => {
+              setSelectedState(e.target.value);
+              setSelectedLocality("All");
+            }}
+            title="Filter by State or Union Territory"
+          >
+            <option value="All India">All India (36 States/UTs)</option>
+            {ALL_INDIAN_STATES.map((st) => (
+              <option key={st} value={st}>{st}</option>
+            ))}
+          </select>
+
+          {/* City / Locality Filter */}
           <select 
             className="custom-select" 
             value={selectedLocality} 
             onChange={(e) => setSelectedLocality(e.target.value)}
+            title="Filter by City / Hub"
           >
-            {localities.map((loc) => (
-              <option key={loc} value={loc}>{loc}</option>
+            {availableCities.map((loc) => (
+              <option key={loc} value={loc}>City: {loc}</option>
             ))}
           </select>
 
+          {/* Website Status & Category */}
           <select 
             className="custom-select" 
             value={websiteFilter} 
             onChange={(e) => setWebsiteFilter(e.target.value)}
           >
-            <option value="all">Website: All Statuses</option>
-            <option value="no_website">No Website Only</option>
-            <option value="has_website">Has Website Only</option>
+            <option value="all">Website: All Categories</option>
+            <option value="no_website_priority">NO WEBSITE – HIGH PRIORITY</option>
+            <option value="social_only">Social Media Only (IG/FB)</option>
+            <option value="directory_only">Directory Listing Only</option>
+            <option value="no_website">All Without Website</option>
+            <option value="has_website">Website Exists (Audited)</option>
           </select>
 
+          {/* Priority */}
           <select 
             className="custom-select" 
             value={priorityFilter} 
@@ -131,11 +204,24 @@ export function AllBusinessesTab({
           </div>
         </div>
 
-        {/* Secondary Filter Chips Row */}
+        {/* Row 2: Sort, Rating, Reviews, Channel, Phone toggle */}
         <div className="filter-row" style={{ paddingTop: "8px", borderTop: "1px solid rgba(255, 255, 255, 0.05)" }}>
           <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
-            <Filter size={12} /> Fine Tuning:
+            <ArrowUpDown size={12} /> Sort & Refine:
           </span>
+
+          <select 
+            className="custom-select" 
+            style={{ padding: "6px 12px", fontSize: "0.78rem" }}
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="score_desc">Sort: Opportunity Score (High to Low)</option>
+            <option value="reviews_desc">Sort: Review Count (Highest)</option>
+            <option value="rating_desc">Sort: Google Rating (Highest)</option>
+            <option value="name_asc">Sort: Studio Name (A-Z)</option>
+            <option value="state_asc">Sort: State (A-Z)</option>
+          </select>
 
           <select 
             className="custom-select" 
@@ -144,6 +230,7 @@ export function AllBusinessesTab({
             onChange={(e) => setMinRating(e.target.value)}
           >
             <option value="0">Min Rating: Any</option>
+            <option value="4.0">Rating: 4.0+ ★</option>
             <option value="4.5">Rating: 4.5+ ★</option>
             <option value="4.7">Rating: 4.7+ ★</option>
           </select>
@@ -155,9 +242,9 @@ export function AllBusinessesTab({
             onChange={(e) => setMinReviews(e.target.value)}
           >
             <option value="0">Min Reviews: Any</option>
+            <option value="50">50+ Reviews</option>
             <option value="100">100+ Reviews</option>
             <option value="200">200+ Reviews</option>
-            <option value="300">300+ Reviews</option>
           </select>
 
           <select 
@@ -172,8 +259,18 @@ export function AllBusinessesTab({
             <option value="mixed">Mixed</option>
           </select>
 
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.78rem", color: "var(--text-secondary)", cursor: "pointer", userSelect: "none" }}>
+            <input 
+              type="checkbox" 
+              checked={hasPhoneOnly} 
+              onChange={(e) => setHasPhoneOnly(e.target.checked)}
+              style={{ accentColor: "#10B981" }}
+            />
+            <span>Verified Phone Only</span>
+          </label>
+
           <div style={{ marginLeft: "auto", fontSize: "0.82rem", color: "var(--text-secondary)" }}>
-            Showing <strong>{filteredBusinesses.length}</strong> of {businesses.length} detailing businesses
+            Showing <strong>{sortedBusinesses.length}</strong> of {businesses.length} detailing businesses
           </div>
         </div>
       </div>
@@ -184,25 +281,25 @@ export function AllBusinessesTab({
           <table className="custom-table">
             <thead>
               <tr>
-                <th>Business Name & Locality</th>
+                <th>Business Name & Location</th>
                 <th>Google Rating</th>
                 <th>Contact Phone</th>
                 <th>Website Status</th>
-                <th>Lead Model</th>
+                <th>Category</th>
                 <th>Opportunity Score</th>
                 <th>Priority</th>
                 <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredBusinesses.length === 0 ? (
+              {sortedBusinesses.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
                     No detailing studios match the selected filter criteria.
                   </td>
                 </tr>
               ) : (
-                filteredBusinesses.map((b) => {
+                sortedBusinesses.map((b) => {
                   const badgeStyle = getPriorityBadgeColor(b.priority);
                   return (
                     <tr key={b.id}>
@@ -212,8 +309,8 @@ export function AllBusinessesTab({
                         </div>
                         <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "4px" }}>
                           <MapPin size={11} color="#6366F1" />
-                          <span>{b.locality}</span>
-                          <span style={{ color: "var(--text-muted)" }}>• PIN {b.pinCode}</span>
+                          <span>{b.city || b.locality}, {b.state}</span>
+                          {b.pinCode && <span style={{ color: "var(--text-muted)" }}>• PIN {b.pinCode}</span>}
                         </div>
                       </td>
 
@@ -230,12 +327,12 @@ export function AllBusinessesTab({
                       <td>
                         {b.phone ? (
                           <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.82rem" }}>
-                            <a href={`tel:${b.phone}`} style={{ color: "#E2E8F0" }}>
-                              {b.phone}
+                            <a href={`tel:${b.phone}`} style={{ color: "#E2E8F0", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <Phone size={11} color="#10B981" /> {b.phone}
                             </a>
                           </div>
                         ) : (
-                          <span style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>Not found</span>
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>GMB direct</span>
                         )}
                       </td>
 
@@ -250,13 +347,32 @@ export function AllBusinessesTab({
                             </div>
                           </div>
                         ) : (
-                          <span className="badge badge-no">No Website</span>
+                          <div>
+                            <span className="badge badge-no">No Website</span>
+                            {b.instagram && (
+                              <div style={{ fontSize: "0.72rem", color: "#818CF8", marginTop: "2px" }}>
+                                {b.instagram}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
 
                       <td>
-                        <span className="badge badge-lead-type">
-                          {b.leadChannelType}
+                        <span className="badge" style={{ 
+                          background: b.websiteCategory?.includes("NO WEBSITE") 
+                            ? "rgba(239, 68, 68, 0.15)" 
+                            : b.websiteCategory?.includes("SOCIAL")
+                            ? "rgba(168, 85, 247, 0.15)"
+                            : "rgba(99, 102, 241, 0.15)",
+                          color: b.websiteCategory?.includes("NO WEBSITE") 
+                            ? "#FCA5A5" 
+                            : b.websiteCategory?.includes("SOCIAL")
+                            ? "#D8B4FE"
+                            : "#A5B4FC",
+                          fontSize: "0.72rem"
+                        }}>
+                          {b.websiteCategory || b.leadChannelType}
                         </span>
                       </td>
 
@@ -271,7 +387,7 @@ export function AllBusinessesTab({
 
                       <td>
                         <span style={{ fontSize: "0.78rem", fontWeight: 600, color: badgeStyle.text }}>
-                          {b.priority.replace(" prospect", "")}
+                          {b.priority ? b.priority.replace(" prospect", "") : "Hot"}
                         </span>
                       </td>
 
@@ -297,7 +413,7 @@ export function AllBusinessesTab({
                             className="btn-secondary" 
                             style={{ padding: "6px 10px", fontSize: "0.76rem" }}
                             onClick={() => onSelectBusiness(b, "competitor")}
-                            title="5KM Competitor Radar"
+                            title="Competitor Radar"
                           >
                             <Users size={12} />
                           </button>
@@ -313,7 +429,7 @@ export function AllBusinessesTab({
       ) : (
         /* GRID VIEW */
         <div className="leads-grid">
-          {filteredBusinesses.map((b) => {
+          {sortedBusinesses.map((b) => {
             const badgeStyle = getPriorityBadgeColor(b.priority);
             return (
               <div key={b.id} className="lead-card">
@@ -323,7 +439,7 @@ export function AllBusinessesTab({
                       <h3>{b.name}</h3>
                       <div className="lead-locality">
                         <MapPin size={13} color="#94A3B8" />
-                        <span>{b.locality}</span>
+                        <span>{b.city || b.locality}, {b.state}</span>
                       </div>
                     </div>
                     <div 
@@ -346,10 +462,10 @@ export function AllBusinessesTab({
                   </div>
 
                   <div className="services-tag-list">
-                    {b.services.slice(0, 3).map((s, idx) => (
+                    {(b.services || []).slice(0, 3).map((s, idx) => (
                       <span key={idx} className="service-tag">{s}</span>
                     ))}
-                    {b.services.length > 3 && (
+                    {(b.services || []).length > 3 && (
                       <span className="service-tag">+{b.services.length - 3} more</span>
                     )}
                   </div>
@@ -359,9 +475,9 @@ export function AllBusinessesTab({
                   </div>
 
                   <div className="recommendation-box">
-                    <strong>Virtual Agency Solution:</strong> {b.virtualAgencyRecommendation?.recommendedSolution}
+                    <strong>Virtual Agency Solution:</strong> {b.virtualAgencyRecommendation?.recommendedSolution || "Studio Website Package"}
                     <div style={{ color: "#10B981", fontSize: "0.74rem", marginTop: "3px", fontWeight: 600 }}>
-                      Price: {b.virtualAgencyRecommendation?.suggestedPackagePrice}
+                      Price: {b.virtualAgencyRecommendation?.suggestedPackagePrice || "₹30,000"}
                     </div>
                   </div>
                 </div>

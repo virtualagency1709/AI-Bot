@@ -6,11 +6,14 @@ import {
   Mail, 
   Layers, 
   ShieldCheck, 
-  Car
+  Car,
+  MessageSquare
 } from "lucide-react";
+import { VIRTUAL_AGENCY_CONTACT } from "../config/agencyContact";
 
 export function Header({ 
-  totalCount
+  totalCount,
+  activeStateFilter = "All India"
 }) {
   return (
     <header className="header-wrapper">
@@ -22,12 +25,12 @@ export function Header({
           </div>
           <div className="brand-text">
             <h1>
-              LocalLead AI <span className="badge-ai">Enterprise Bot</span>
+              LocalLead AI <span className="badge-ai">Pan-India Lead Engine</span>
             </h1>
             <div className="brand-subtitle">
-              <span>Business Prospecting & Competitor Intelligence for</span>
+              <span>Car Detailing Lead Generation & Competitor Intelligence for</span>
               <a 
-                href="https://virtualagency.in/" 
+                href={VIRTUAL_AGENCY_CONTACT.websiteUrl} 
                 target="_blank" 
                 rel="noreferrer" 
                 className="agency-chip"
@@ -40,16 +43,36 @@ export function Header({
 
         {/* Agency Quick Reach Bar */}
         <div className="header-agency-info">
-          <div className="agency-contact-pill">
-            <Phone size={14} color="#10B981" />
-            <span>Call: <strong>7838056998</strong></span>
-          </div>
-          <div className="agency-contact-pill">
-            <Mail size={14} color="#6366F1" />
-            <span><strong>info@virtualagency.in</strong></span>
-          </div>
           <a 
-            href="https://virtualagency.in/" 
+            href={`tel:+91${VIRTUAL_AGENCY_CONTACT.phone}`}
+            className="agency-contact-pill"
+            style={{ textDecoration: 'none' }}
+            title="Call Virtual Agency Sales Desk"
+          >
+            <Phone size={14} color="#10B981" />
+            <span>Call: <strong>{VIRTUAL_AGENCY_CONTACT.phoneDisplay}</strong></span>
+          </a>
+          <a 
+            href={VIRTUAL_AGENCY_CONTACT.getWhatsAppUrl("Hello Virtual Agency, I would like to inquire about car detailing leads and website design packages.")}
+            target="_blank" 
+            rel="noreferrer"
+            className="agency-contact-pill"
+            style={{ textDecoration: 'none' }}
+            title="WhatsApp Virtual Agency"
+          >
+            <MessageSquare size={14} color="#25D366" />
+            <span>WhatsApp: <strong>{VIRTUAL_AGENCY_CONTACT.phoneDisplay}</strong></span>
+          </a>
+          <a 
+            href={`mailto:${VIRTUAL_AGENCY_CONTACT.email}`}
+            className="agency-contact-pill"
+            style={{ textDecoration: 'none' }}
+          >
+            <Mail size={14} color="#6366F1" />
+            <span><strong>{VIRTUAL_AGENCY_CONTACT.email}</strong></span>
+          </a>
+          <a 
+            href={VIRTUAL_AGENCY_CONTACT.websiteUrl} 
             target="_blank" 
             rel="noreferrer" 
             className="agency-contact-pill" 
@@ -67,18 +90,18 @@ export function Header({
           <div className="config-items-group">
             <div className="config-chip">
               <MapPin size={13} color="#EF4444" />
-              <span>Target:</span>
-              <span className="val">Delhi NCR, India</span>
+              <span>Target Scope:</span>
+              <span className="val">{activeStateFilter === "All India" ? "Pan-India (All 36 States & UTs)" : activeStateFilter}</span>
             </div>
             <div className="config-chip">
               <Car size={13} color="#06B6D4" />
               <span>Category:</span>
-              <span className="val">Car Detailing (PPF & Ceramic)</span>
+              <span className="val">Car Detailing (PPF, Ceramic, Car Spa)</span>
             </div>
             <div className="config-chip">
               <Layers size={13} color="#A855F7" />
-              <span>Search Radius:</span>
-              <span className="val">5 KM Radius Analysis</span>
+              <span>Coverage:</span>
+              <span className="val">Metros, Tier-2 & Tier-3 Cities</span>
             </div>
             <div className="config-chip">
               <ShieldCheck size={13} color="#10B981" />
@@ -89,7 +112,7 @@ export function Header({
 
           <div className="search-progress-badge">
             <div className="status-dot"></div>
-            <span>Verified Lead Pipeline Active ({totalCount} Studios Scanned)</span>
+            <span>Verified Lead Pipeline Active ({totalCount} Studios Nationwide)</span>
           </div>
         </div>
       </div>

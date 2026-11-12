@@ -17,7 +17,9 @@ export function NoWebsiteTab({
     (b) => b.websiteStatus === "No" || b.websiteStatus === "Unverified"
   ).filter((b) => 
     b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.locality.toLowerCase().includes(searchTerm.toLowerCase())
+    (b.city && b.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (b.state && b.state.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (b.locality && b.locality.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -31,23 +33,23 @@ export function NoWebsiteTab({
                 <Globe2 size={12} /> High-Ticket Website Opportunity
               </span>
               <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                {noWebsiteLeads.length} Prospects Identified in Delhi
+                {noWebsiteLeads.length} Prospects Identified Across India
               </span>
             </div>
             <h2 style={{ fontSize: "1.3rem", marginBottom: "8px" }}>
               High-Demand Detailing Studios Without Any Official Website
             </h2>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem", maxWidth: "850px" }}>
-              These business owners already have genuine customer footfall and 4.5+ star reputations on Google Maps. Because they lack a website, luxury car buyers searching for PPF warranties and ceramic coating certifications choose nearby competitors. Pitch them Virtual Agency’s <strong>Turnkey Car Detailing Studio Web Portal</strong> (₹25,000–₹40,000).
+              These business owners already have genuine customer footfall and 4.5+ star reputations on Google Maps. Because they lack a website, luxury car buyers searching for PPF warranties and ceramic coating certifications choose nearby competitors. Pitch them Virtual Agency’s <strong>Turnkey Car Detailing Studio Web Portal</strong> (₹30,000–₹50,000).
             </p>
           </div>
 
           <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "12px 18px", borderRadius: "12px" }}>
             <div style={{ color: "var(--text-muted)", fontSize: "0.76rem" }}>Total Pipeline Value</div>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "1.5rem", fontWeight: 700, color: "#F87171" }}>
-              ₹{noWebsiteLeads.length * 32000 > 0 ? (noWebsiteLeads.length * 32).toLocaleString() + ",000" : "0"}
+              ₹{noWebsiteLeads.length * 35000 > 0 ? (noWebsiteLeads.length * 35).toLocaleString() + ",000" : "0"}
             </div>
-            <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>At avg ₹32k/website package</div>
+            <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>At avg ₹35k/website package</div>
           </div>
         </div>
       </div>
@@ -57,7 +59,7 @@ export function NoWebsiteTab({
         <input 
           type="text" 
           className="custom-input" 
-          placeholder="Filter no-website studios by name or locality..."
+          placeholder="Filter no-website studios by name, city or state..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -75,7 +77,7 @@ export function NoWebsiteTab({
                     <h3>{b.name}</h3>
                     <div className="lead-locality">
                       <MapPin size={12} color="#EF4444" />
-                      <span>{b.locality}</span>
+                      <span>{b.city || b.locality}, {b.state}</span>
                     </div>
                   </div>
                   <div className="score-badge" style={{ background: "rgba(239, 68, 68, 0.15)", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
