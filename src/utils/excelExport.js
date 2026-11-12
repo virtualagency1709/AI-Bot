@@ -1,5 +1,5 @@
 // LocalLead AI — Multi-Sheet Excel & CSV Export Generator using SheetJS (xlsx)
-// Built for Virtual Agency (https://virtualagency.in/, +91 98711 55662, info@virtualagency.in)
+// Built for Virtual Agency (https://virtualagency.in/, 7838056998, info@virtualagency.in)
 
 import * as XLSX from "xlsx";
 import { generateAllPitches } from "./pitchGenerator";
@@ -177,7 +177,7 @@ export function exportLeadsToExcel(businesses, filename = "VirtualAgency_Delhi_C
     {
       "Agency Information": "Virtual Agency, India",
       "Coverage": "Digital Marketing, Web Design, Local SEO, and Lead Acquisition",
-      "Data Extracted": "Agency Website: https://virtualagency.in/ | Phone / WhatsApp: +91 98711 55662 | Email: info@virtualagency.in",
+      "Data Extracted": "Agency Website: https://virtualagency.in/ | Phone: +91 7838056998 | Email: info@virtualagency.in",
       "Compliance Status": "Authorized Sales & Client Acquisition Intelligence Bot",
       "Verification Method": "Internal Agency Operations",
       "Verification Date": "2026-10-10"

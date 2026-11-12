@@ -92,7 +92,7 @@ export function PitchGeneratorTab({
             <div style={{ color: "var(--text-muted)", fontSize: "0.76rem" }}>Agency Rep Info</div>
             <strong style={{ color: "#34D399", fontSize: "0.95rem" }}>Virtual Agency, India</strong>
             <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-              +91 98711 55662 | info@virtualagency.in
+              7838056998 | info@virtualagency.in
             </div>
           </div>
         </div>
@@ -106,7 +106,7 @@ export function PitchGeneratorTab({
           </label>
           <select 
             className="custom-select" 
-            style={{ minWidth: "min(340px, 100%)", flex: 1 }}
+            style={{ minWidth: "340px", flex: 1 }}
             value={selectedBusinessId} 
             onChange={(e) => setSelectedBusinessId(e.target.value)}
           >

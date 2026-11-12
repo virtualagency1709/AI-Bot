@@ -57,7 +57,7 @@ export function CompetitorTab({
           </label>
           <select 
             className="custom-select" 
-            style={{ minWidth: "min(320px, 100%)", flex: 1 }}
+            style={{ minWidth: "320px", flex: 1 }}
             value={selectedBusinessId} 
             onChange={(e) => setSelectedBusinessId(e.target.value)}
           >

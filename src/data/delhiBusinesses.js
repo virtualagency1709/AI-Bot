@@ -1,5 +1,5 @@
 // LocalLead AI — Verified Car Detailing Businesses Dataset for Delhi, India
-// Targeted for Virtual Agency (https://virtualagency.in/, Contact: +91 98711 55662, info@virtualagency.in)
+// Targeted for Virtual Agency (https://virtualagency.in/, Contact: 7838056998, info@virtualagency.in)
 
 export const DELHI_LOCALITIES = [
   "All Delhi",
@@ -37,7 +37,7 @@ export const DELHI_BUSINESSES = [
     locality: "Okhla Industrial Area",
     zone: "South Delhi",
     pinCode: "110020",
-    phone: "+91 98711 55662",
+    phone: "+91 80100 44000",
     hasPhone: true,
     website: "https://www.thedetailingmafia.com/delhi-okhla",
     websiteStatus: "Yes",

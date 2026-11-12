@@ -177,7 +177,7 @@ export function BusinessDetailModal({
         {/* TAB 2: AUDIT */}
         {activeTab === "audit" && (
           <div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "10px", marginBottom: "16px", fontSize: "0.82rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px", fontSize: "0.82rem" }}>
               <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "12px", borderRadius: "8px" }}>
                 <span style={{ color: "var(--text-muted)" }}>Mobile Friendliness: </span>
                 <strong style={{ color: wa.mobileFriendly ? "#10B981" : "#EF4444" }}>

@@ -113,7 +113,7 @@ export function HighPriorityTab({
               </div>
 
               {/* Rationale and Strategy */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: "16px", margin: "14px 0" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "16px", margin: "14px 0" }}>
                 <div className="gap-highlight-box" style={{ margin: 0 }}>
                   <strong>Why This is a Hot Prospect:</strong>
                   <div style={{ marginTop: "4px", fontSize: "0.82rem" }}>{b.opportunityReason}</div>

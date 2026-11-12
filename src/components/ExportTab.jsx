@@ -130,7 +130,7 @@ export function ExportTab({
           <Layers size={18} color="#6366F1" /> Included Workbook Sheets (Specification 10)
         </h3>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "14px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "14px" }}>
           {sheetsInfo.map((s) => (
             <div 
               key={s.num} 
@@ -177,7 +177,7 @@ export function ExportTab({
           <ShieldCheck size={18} color="#6366F1" /> Compliance, Privacy & Data Quality Assurance
         </h3>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: "16px", fontSize: "0.84rem", color: "var(--text-secondary)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", fontSize: "0.84rem", color: "var(--text-secondary)" }}>
           <div>
             <strong style={{ color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>Authorized Data Sources:</strong>
             Publicly listed Google Business Profiles, authorized mapping directory indexes, and publicly accessible web landing pages. No CAPTCHAs or private APIs bypassed.

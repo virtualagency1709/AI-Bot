@@ -9,8 +9,7 @@ import {
   Gauge, 
   Sparkles, 
   FileSpreadsheet, 
-  TrendingUp,
-  ChevronDown
+  TrendingUp
 } from "lucide-react";
 import { DELHI_BUSINESSES, DELHI_LOCALITIES } from "./data/delhiBusinesses";
 import { Header } from "./components/Header";
@@ -25,8 +24,6 @@ import { WebsiteAuditTab } from "./components/WebsiteAuditTab";
 import { PitchGeneratorTab } from "./components/PitchGeneratorTab";
 import { ExportTab } from "./components/ExportTab";
 import { BusinessDetailModal } from "./components/BusinessDetailModal";
-import { FloatingWhatsAppBot } from "./components/FloatingWhatsAppBot";
-import { Footer } from "./components/Footer";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -91,27 +88,9 @@ export default function App() {
         localities={DELHI_LOCALITIES}
       />
 
-      {/* 10 Navigation Tabs Bar — horizontal scroll on all, mobile dropdown fallback */}
-      <nav className="tabs-nav-bar" aria-label="Main navigation">
-        {/* Mobile dropdown selector — visible only on small screens */}
-        <div className="mobile-nav-select-wrap">
-          <select
-            className="mobile-nav-select"
-            value={activeTab}
-            onChange={(e) => setActiveTab(e.target.value)}
-            aria-label="Navigate to section"
-          >
-            {navTabs.map((tab) => (
-              <option key={tab.id} value={tab.id}>
-                {tab.label}{tab.count !== undefined ? ` (${tab.count})` : ""}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={16} className="mobile-nav-chevron" />
-        </div>
-
-        {/* Desktop/Tablet — horizontal scrollable tab buttons */}
-        <div className="tabs-nav-inner desktop-tabs">
+      {/* 10 Navigation Tabs Bar */}
+      <nav className="tabs-nav-bar">
+        <div className="tabs-nav-inner">
           {navTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -120,9 +99,8 @@ export default function App() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`nav-tab-btn ${isActive ? "active" : ""}`}
-                aria-current={isActive ? "page" : undefined}
               >
-                <Icon size={16} aria-hidden="true" />
+                <Icon size={16} />
                 <span>{tab.label}</span>
                 {tab.count !== undefined && (
                   <span className={`tab-badge ${tab.isHot ? "badge-hot" : ""}`}>
@@ -213,12 +191,6 @@ export default function App() {
           />
         )}
       </main>
-
-      {/* Footer */}
-      <Footer onNavigateTab={setActiveTab} />
-
-      {/* Floating WhatsApp Live Assistant */}
-      <FloatingWhatsAppBot />
 
       {/* Business Detail Modal Overlay */}
       {isModalOpen && selectedBusiness && (

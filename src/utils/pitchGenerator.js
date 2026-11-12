@@ -1,12 +1,15 @@
 // LocalLead AI — Sales Pitch Generator for Virtual Agency
-// Agency Info: Virtual Agency (https://virtualagency.in/, +91 98711 55662, info@virtualagency.in)
+// Agency Info: Virtual Agency (https://virtualagency.in/, 7838056998, info@virtualagency.in)
 
-import { WHATSAPP_CONFIG } from "../config/whatsapp";
-export { WHATSAPP_CONFIG };
-
-export function getAgencyWhatsAppURL(customMessage) {
-  return WHATSAPP_CONFIG.getURL(customMessage);
-}
+// Virtual Agency Verified Contact Configuration
+export const VIRTUAL_AGENCY_CONTACT = {
+  phone: "7838056998",
+  displayPhone: "+91 78380 56998",
+  whatsappNumber: "917838056998",
+  whatsappUrl: "https://wa.me/917838056998?text=Hello%2C%20I%20am%20interested%20in%20your%20services.",
+  email: "info@virtualagency.in",
+  website: "https://virtualagency.in/"
+};
 
 export function generateAllPitches(business) {
   const name = business.name;
@@ -14,6 +17,7 @@ export function generateAllPitches(business) {
   const rating = business.rating;
   const reviews = business.reviewCount;
   const phone = business.phone;
+  const cleanPhone = phone ? phone.replace(/[^0-9]/g, "") : "";
   const hasWebsite = business.websiteStatus === "Yes";
   const mainWeakness = business.websiteAudit?.identifiedWeaknesses?.[0]?.issue || 
     (hasWebsite ? "Missing high-converting WhatsApp quote funnel" : "Absence of an official studio website");
@@ -39,7 +43,7 @@ Kya hum kal 10 minute ka ek quick phone call ya WhatsApp par 3-step live demo pr
 
 Regards,
 Shivam | Virtual Agency
-📞 Phone: +91 98711 55662
+📞 Phone: 7838056998
 🌐 Website: https://virtualagency.in/
 ✉️ Email: info@virtualagency.in`;
 
@@ -72,7 +76,7 @@ Best regards,
 Digital Growth Team
 Virtual Agency, New Delhi
 Website: https://virtualagency.in/
-Contact: +91 98711 55662
+Contact: +91 7838056998
 Email: info@virtualagency.in`;
 
   // 3. Instagram DM
@@ -86,7 +90,7 @@ We build luxury dark-aesthetic websites & WhatsApp quote funnels for car detaile
 
 Mind if we share a quick 2-minute video breakdown of how you can capture 20+ additional ceramic/PPF bookings every month? Let us know! 🚗✨
 
-— Shivam, Virtual Agency (+91 98711 55662)`;
+— Shivam, Virtual Agency (+91 7838056998)`;
 
   // 4. Phone Calling Script (Cold Call SDR)
   const callingScript = `[COLD CALL SCRIPT FOR SDR / AGENCY REPRESENTATIVE]
@@ -140,7 +144,7 @@ STAGE 6: CLOSE FOR DISCOVERY CALL
 ---------------------------------------------------------
 "Sir, main chahta hoon aap hamare work ka ek sample dekhein. Main aapko WhatsApp par ek 2-minute live demo link bhej raha hoon. Kal dopahar 3 baje ya sham 6 baje ek 10-minute ka call connect kar sakte hain?"
 
-Virtual Agency Contact: +91 98711 55662 | Website: https://virtualagency.in/`;
+Virtual Agency Contact: 7838056998 | Website: https://virtualagency.in/`;
 
   // 5. Follow-up Message (48 Hours Later)
   const followUpMessage = `Namaste ${name} Team! 🙏
@@ -153,7 +157,7 @@ Humne aapke studio ke liye ek customized 1-page Growth Blueprint draft kiya hai,
 
 Kya main yeh PDF report aapko isi WhatsApp number par share kar doon?
 
-Virtual Agency | 📞 +91 98711 55662 | 🌐 https://virtualagency.in/`;
+Virtual Agency | 📞 7838056998 | 🌐 https://virtualagency.in/`;
 
   // 6. Short Business-Specific Audit Summary
   const auditSummary = `📋 DIGITAL AUDIT SUMMARY — ${name.toUpperCase()}
@@ -166,9 +170,23 @@ Virtual Agency | 📞 +91 98711 55662 | 🌐 https://virtualagency.in/`;
 • Recommended Action: ${recommendation}
 • Virtual Agency Target Price: ${business.virtualAgencyRecommendation?.suggestedPackagePrice || "₹30,000"}`;
 
-  // WhatsApp Web deep-link using the verified centralized business WhatsApp number
-  // Format guaranteed: https://wa.me/919871155662?text=...
-  const waUrl = WHATSAPP_CONFIG.getURL(whatsappPitch);
+  // WhatsApp Web deep-link: format with single country code (91XXXXXXXXXX) without duplication
+  const encodedWhatsappText = encodeURIComponent(whatsappPitch);
+  let targetPhone = "";
+  if (cleanPhone) {
+    if (cleanPhone.startsWith("91") && cleanPhone.length === 12) {
+      targetPhone = cleanPhone; // Already has single 91 country code (12 digits)
+    } else if (cleanPhone.startsWith("9191") && cleanPhone.length >= 14) {
+      targetPhone = cleanPhone.slice(2); // Strip accidental duplicate 91
+    } else if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
+      targetPhone = `91${cleanPhone.slice(1)}`;
+    } else if (cleanPhone.length === 10) {
+      targetPhone = `91${cleanPhone}`;
+    } else {
+      targetPhone = cleanPhone.startsWith("91") ? cleanPhone : `91${cleanPhone}`;
+    }
+  }
+  const waUrl = targetPhone ? `https://wa.me/${targetPhone}?text=${encodedWhatsappText}` : null;
 
   return {
     whatsappPitch,
