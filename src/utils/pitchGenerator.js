@@ -1,6 +1,21 @@
 // LocalLead AI — Sales Pitch Generator for Virtual Agency
 // Agency Info: Virtual Agency (https://virtualagency.in/, 7838056998, info@virtualagency.in)
 
+// ============================================================
+// CENTRALIZED WHATSAPP CONFIGURATION — Single source of truth
+// Never hardcode or duplicate the number anywhere else.
+// ============================================================
+export const WHATSAPP_CONFIG = {
+  number: "919871155662",           // Country code + mobile, no + prefix
+  displayNumber: "+91 9871155662",  // Human-readable display format
+  message: "Hello, I am interested in your services.",
+};
+
+export function getAgencyWhatsAppURL(customMessage) {
+  const msg = customMessage || WHATSAPP_CONFIG.message;
+  return `https://wa.me/${WHATSAPP_CONFIG.number}?text=${encodeURIComponent(msg)}`;
+}
+
 export function generateAllPitches(business) {
   const name = business.name;
   const locality = business.locality;
@@ -160,9 +175,16 @@ Virtual Agency | 📞 7838056998 | 🌐 https://virtualagency.in/`;
 • Recommended Action: ${recommendation}
 • Virtual Agency Target Price: ${business.virtualAgencyRecommendation?.suggestedPackagePrice || "₹30,000"}`;
 
-  // WhatsApp Web deep-link
+  // WhatsApp Web deep-link — centralized number config
+  // Strip country code prefix (91) if present to avoid duplicate: +91 80100 44000 → 918010044000 → strip leading 91 → 8010044000 → prepend 91 → 918010044000
+  const WHATSAPP_AGENCY_NUMBER = "919871155662"; // Virtual Agency centralized number
+  const normalizedPhone = cleanPhone.startsWith("91") && cleanPhone.length >= 11
+    ? cleanPhone.slice(2)   // remove leading 91 country code if present
+    : cleanPhone;           // already without country code
+  const whatsappPhone = normalizedPhone ? `91${normalizedPhone}` : null;
   const encodedWhatsappText = encodeURIComponent(whatsappPitch);
-  const waUrl = cleanPhone ? `https://wa.me/91${cleanPhone}?text=${encodedWhatsappText}` : null;
+  // Build target-business WhatsApp URL using correctly normalized number
+  const waUrl = whatsappPhone ? `https://wa.me/${whatsappPhone}?text=${encodedWhatsappText}` : null;
 
   return {
     whatsappPitch,

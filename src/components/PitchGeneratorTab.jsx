@@ -106,7 +106,7 @@ export function PitchGeneratorTab({
           </label>
           <select 
             className="custom-select" 
-            style={{ minWidth: "340px", flex: 1 }}
+            style={{ minWidth: "min(340px, 100%)", flex: 1 }}
             value={selectedBusinessId} 
             onChange={(e) => setSelectedBusinessId(e.target.value)}
           >
