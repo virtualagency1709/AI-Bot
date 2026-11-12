@@ -6,8 +6,10 @@ import {
   Mail, 
   Layers, 
   ShieldCheck, 
-  Car
+  Car,
+  MessageCircle
 } from "lucide-react";
+import { WHATSAPP_CONFIG } from "../config/whatsapp";
 
 export function Header({ 
   totalCount
@@ -38,16 +40,33 @@ export function Header({
           </div>
         </div>
 
-        {/* Agency Quick Reach Bar */}
+        {/* Agency Quick Reach Bar with Verified WhatsApp & Phone */}
         <div className="header-agency-info">
-          <div className="agency-contact-pill">
+          <a 
+            href={WHATSAPP_CONFIG.getURL("Hello, I am interested in your services.")}
+            target="_blank" 
+            rel="noreferrer" 
+            className="agency-contact-pill header-whatsapp-pill"
+            style={{ textDecoration: 'none' }}
+          >
+            <MessageCircle size={14} color="#25D366" />
+            <span>WhatsApp: <strong>9871155662</strong></span>
+          </a>
+
+          <a 
+            href="tel:+919871155662"
+            className="agency-contact-pill"
+            style={{ textDecoration: 'none' }}
+          >
             <Phone size={14} color="#10B981" />
-            <span>Call: <strong>7838056998</strong></span>
-          </div>
+            <span>Call: <strong>+91 98711 55662</strong></span>
+          </a>
+
           <div className="agency-contact-pill">
             <Mail size={14} color="#6366F1" />
             <span><strong>info@virtualagency.in</strong></span>
           </div>
+
           <a 
             href="https://virtualagency.in/" 
             target="_blank" 

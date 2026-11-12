@@ -92,7 +92,7 @@ export function LocalityTab({
       </div>
 
       {/* Locality Grid */}
-      <div className="leads-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))" }}>
+      <div className="leads-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(360px, 100%), 1fr))" }}>
         {localitySummaries.map((loc) => {
           return (
             <div key={loc.name} className="lead-card">

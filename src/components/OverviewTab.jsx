@@ -120,7 +120,7 @@ export function OverviewTab({
       </div>
 
       {/* Dual Column: Pipeline Analytics & Top Priority Prospects */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: "24px", marginBottom: "32px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(420px, 100%), 1fr))", gap: "24px", marginBottom: "32px" }}>
         {/* Pipeline Distribution Card */}
         <div className="glass-card">
           <h3 style={{ fontSize: "1.1rem", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>

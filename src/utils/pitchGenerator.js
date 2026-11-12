@@ -1,19 +1,11 @@
 // LocalLead AI — Sales Pitch Generator for Virtual Agency
-// Agency Info: Virtual Agency (https://virtualagency.in/, 7838056998, info@virtualagency.in)
+// Agency Info: Virtual Agency (https://virtualagency.in/, +91 98711 55662, info@virtualagency.in)
 
-// ============================================================
-// CENTRALIZED WHATSAPP CONFIGURATION — Single source of truth
-// Never hardcode or duplicate the number anywhere else.
-// ============================================================
-export const WHATSAPP_CONFIG = {
-  number: "919871155662",           // Country code + mobile, no + prefix
-  displayNumber: "+91 9871155662",  // Human-readable display format
-  message: "Hello, I am interested in your services.",
-};
+import { WHATSAPP_CONFIG } from "../config/whatsapp";
+export { WHATSAPP_CONFIG };
 
 export function getAgencyWhatsAppURL(customMessage) {
-  const msg = customMessage || WHATSAPP_CONFIG.message;
-  return `https://wa.me/${WHATSAPP_CONFIG.number}?text=${encodeURIComponent(msg)}`;
+  return WHATSAPP_CONFIG.getURL(customMessage);
 }
 
 export function generateAllPitches(business) {
@@ -22,7 +14,6 @@ export function generateAllPitches(business) {
   const rating = business.rating;
   const reviews = business.reviewCount;
   const phone = business.phone;
-  const cleanPhone = phone ? phone.replace(/[^0-9]/g, "") : "";
   const hasWebsite = business.websiteStatus === "Yes";
   const mainWeakness = business.websiteAudit?.identifiedWeaknesses?.[0]?.issue || 
     (hasWebsite ? "Missing high-converting WhatsApp quote funnel" : "Absence of an official studio website");
@@ -48,7 +39,7 @@ Kya hum kal 10 minute ka ek quick phone call ya WhatsApp par 3-step live demo pr
 
 Regards,
 Shivam | Virtual Agency
-📞 Phone: 7838056998
+📞 Phone: +91 98711 55662
 🌐 Website: https://virtualagency.in/
 ✉️ Email: info@virtualagency.in`;
 
@@ -81,7 +72,7 @@ Best regards,
 Digital Growth Team
 Virtual Agency, New Delhi
 Website: https://virtualagency.in/
-Contact: +91 7838056998
+Contact: +91 98711 55662
 Email: info@virtualagency.in`;
 
   // 3. Instagram DM
@@ -95,7 +86,7 @@ We build luxury dark-aesthetic websites & WhatsApp quote funnels for car detaile
 
 Mind if we share a quick 2-minute video breakdown of how you can capture 20+ additional ceramic/PPF bookings every month? Let us know! 🚗✨
 
-— Shivam, Virtual Agency (+91 7838056998)`;
+— Shivam, Virtual Agency (+91 98711 55662)`;
 
   // 4. Phone Calling Script (Cold Call SDR)
   const callingScript = `[COLD CALL SCRIPT FOR SDR / AGENCY REPRESENTATIVE]
@@ -149,7 +140,7 @@ STAGE 6: CLOSE FOR DISCOVERY CALL
 ---------------------------------------------------------
 "Sir, main chahta hoon aap hamare work ka ek sample dekhein. Main aapko WhatsApp par ek 2-minute live demo link bhej raha hoon. Kal dopahar 3 baje ya sham 6 baje ek 10-minute ka call connect kar sakte hain?"
 
-Virtual Agency Contact: 7838056998 | Website: https://virtualagency.in/`;
+Virtual Agency Contact: +91 98711 55662 | Website: https://virtualagency.in/`;
 
   // 5. Follow-up Message (48 Hours Later)
   const followUpMessage = `Namaste ${name} Team! 🙏
@@ -162,7 +153,7 @@ Humne aapke studio ke liye ek customized 1-page Growth Blueprint draft kiya hai,
 
 Kya main yeh PDF report aapko isi WhatsApp number par share kar doon?
 
-Virtual Agency | 📞 7838056998 | 🌐 https://virtualagency.in/`;
+Virtual Agency | 📞 +91 98711 55662 | 🌐 https://virtualagency.in/`;
 
   // 6. Short Business-Specific Audit Summary
   const auditSummary = `📋 DIGITAL AUDIT SUMMARY — ${name.toUpperCase()}
@@ -175,16 +166,9 @@ Virtual Agency | 📞 7838056998 | 🌐 https://virtualagency.in/`;
 • Recommended Action: ${recommendation}
 • Virtual Agency Target Price: ${business.virtualAgencyRecommendation?.suggestedPackagePrice || "₹30,000"}`;
 
-  // WhatsApp Web deep-link — centralized number config
-  // Strip country code prefix (91) if present to avoid duplicate: +91 80100 44000 → 918010044000 → strip leading 91 → 8010044000 → prepend 91 → 918010044000
-  const WHATSAPP_AGENCY_NUMBER = "919871155662"; // Virtual Agency centralized number
-  const normalizedPhone = cleanPhone.startsWith("91") && cleanPhone.length >= 11
-    ? cleanPhone.slice(2)   // remove leading 91 country code if present
-    : cleanPhone;           // already without country code
-  const whatsappPhone = normalizedPhone ? `91${normalizedPhone}` : null;
-  const encodedWhatsappText = encodeURIComponent(whatsappPitch);
-  // Build target-business WhatsApp URL using correctly normalized number
-  const waUrl = whatsappPhone ? `https://wa.me/${whatsappPhone}?text=${encodedWhatsappText}` : null;
+  // WhatsApp Web deep-link using the verified centralized business WhatsApp number
+  // Format guaranteed: https://wa.me/919871155662?text=...
+  const waUrl = WHATSAPP_CONFIG.getURL(whatsappPitch);
 
   return {
     whatsappPitch,

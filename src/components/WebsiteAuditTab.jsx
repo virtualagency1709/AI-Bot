@@ -151,7 +151,7 @@ export function WebsiteAuditTab({
           <span>13-Point Technical & Conversion Audit Checklist</span>
         </h4>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: "12px" }}>
           {checklistItems.map((item, idx) => {
             const Icon = item.icon;
             return (
@@ -244,7 +244,7 @@ export function WebsiteAuditTab({
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "16px", fontSize: "0.84rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "16px", fontSize: "0.84rem" }}>
           <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "14px", borderRadius: "10px" }}>
             <strong style={{ color: "var(--text-secondary)", display: "block", marginBottom: "4px" }}>Why It Matters (Business ROI):</strong>
             <p style={{ color: "#E2E8F0" }}>{currentBusiness.virtualAgencyRecommendation?.whyItMatters}</p>

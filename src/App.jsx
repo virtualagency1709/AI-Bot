@@ -25,6 +25,8 @@ import { WebsiteAuditTab } from "./components/WebsiteAuditTab";
 import { PitchGeneratorTab } from "./components/PitchGeneratorTab";
 import { ExportTab } from "./components/ExportTab";
 import { BusinessDetailModal } from "./components/BusinessDetailModal";
+import { FloatingWhatsAppBot } from "./components/FloatingWhatsAppBot";
+import { Footer } from "./components/Footer";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -211,6 +213,12 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Footer */}
+      <Footer onNavigateTab={setActiveTab} />
+
+      {/* Floating WhatsApp Live Assistant */}
+      <FloatingWhatsAppBot />
 
       {/* Business Detail Modal Overlay */}
       {isModalOpen && selectedBusiness && (

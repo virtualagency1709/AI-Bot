@@ -92,7 +92,7 @@ export function PitchGeneratorTab({
             <div style={{ color: "var(--text-muted)", fontSize: "0.76rem" }}>Agency Rep Info</div>
             <strong style={{ color: "#34D399", fontSize: "0.95rem" }}>Virtual Agency, India</strong>
             <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-              7838056998 | info@virtualagency.in
+              +91 98711 55662 | info@virtualagency.in
             </div>
           </div>
         </div>
