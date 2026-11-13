@@ -8,14 +8,20 @@ export const VIRTUAL_AGENCY_CONTACT = {
   agencyName: "Virtual Agency",
   tagline: "India's Premier Digital Growth & Web Engineering Agency",
   officialWebsite: "https://virtualagency.in/",
+  websiteUrl: "https://virtualagency.in/",
   phone: "7838056998",
   phoneFormatted: "+91 78380 56998",
+  phoneDisplay: "+91 78380 56998",
   phoneTel: "tel:+917838056998",
   whatsappNumber: "917838056998",
   whatsappDisplay: "+91 78380 56998",
   whatsappUrl: "https://wa.me/917838056998?text=Hello%20Virtual%20Agency%2C%20I%20am%20interested%20in%20your%20services.",
   email: "info@virtualagency.in",
-  headquarters: "New Delhi, India"
+  headquarters: "New Delhi, India",
+  getWhatsAppUrl(messageText = "Hello, I am interested in your services.") {
+    const encodedMsg = messageText ? `?text=${encodeURIComponent(messageText)}` : "";
+    return `https://wa.me/917838056998${encodedMsg}`;
+  }
 };
 
 /**
@@ -42,4 +48,8 @@ export function buildWhatsAppLink(rawPhone, messageText = "") {
 
   const encodedMsg = messageText ? `?text=${encodeURIComponent(messageText)}` : "";
   return `https://wa.me/${formattedNumber}${encodedMsg}`;
+}
+
+export function getWhatsAppUrl(messageText = "") {
+  return VIRTUAL_AGENCY_CONTACT.getWhatsAppUrl(messageText);
 }

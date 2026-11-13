@@ -268,3 +268,4 @@ export function executeDiscoveryScan(selectedState, selectedCity, existingLeads)
 
   return deduplicateLeads([...newLeads, ...existingLeads]);
 }
+
