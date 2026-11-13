@@ -13,8 +13,9 @@ import {
   TrendingUp,
   Filter
 } from "lucide-react";
-import { ALL_INDIAN_STATES, SERVICE_CATEGORIES } from "../data/panIndiaBusinesses";
+import { ALL_INDIAN_STATES, PRIORITY_INDIAN_CITIES, DISCOVERY_CATEGORIES } from "../data/panIndiaBusinesses";
 import { executeDiscoveryScan, calculateCoverageStats } from "../utils/discoveryEngine";
+import { GooglePlacesAttribution } from "../services/googlePlacesService";
 
 export function LocalityTab({ 
   businesses = [], 
@@ -25,10 +26,13 @@ export function LocalityTab({
   const [viewScope, setViewScope] = useState("states"); // 'states' or 'cities'
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedScanState, setSelectedScanState] = useState("Maharashtra");
-  const [selectedScanCity, setSelectedScanCity] = useState("");
-  const [selectedScanCategory, setSelectedScanCategory] = useState("Car Detailing Studio");
+  const [selectedScanCity, setSelectedScanCity] = useState("Mumbai");
+  const [selectedScanCategory, setSelectedScanCategory] = useState("Car Detailing");
+  const [selectedScanSubcategory, setSelectedScanSubcategory] = useState("Car Detailing Studios");
   const [isScanning, setIsScanning] = useState(false);
   const [scanResultNotice, setScanResultNotice] = useState(null);
+
+  const availableSubcategories = DISCOVERY_CATEGORIES[selectedScanCategory] || [];
 
   // Group data by State
   const stateMap = businesses.reduce((acc, b) => {
@@ -44,7 +48,8 @@ export function LocalityTab({
         withWebsiteCount: 0,
         withoutWebsiteCount: 0,
         highPriorityCount: 0,
-        verifiedPhoneCount: 0
+        verifiedPhoneCount: 0,
+        verifiedWhatsAppCount: 0
       };
     }
     acc[st].businesses.push(b);
@@ -62,6 +67,9 @@ export function LocalityTab({
     if (b.hasPhone) {
       acc[st].verifiedPhoneCount += 1;
     }
+    if (b.hasWhatsApp && b.whatsapp_number) {
+      acc[st].verifiedWhatsAppCount += 1;
+    }
     return acc;
   }, {});
 
@@ -78,7 +86,8 @@ export function LocalityTab({
         ratingsSum: 0,
         withWebsiteCount: 0,
         withoutWebsiteCount: 0,
-        highPriorityCount: 0
+        highPriorityCount: 0,
+        verifiedWhatsAppCount: 0
       };
     }
     acc[key].businesses.push(b);
@@ -91,6 +100,9 @@ export function LocalityTab({
     }
     if (b.opportunityScore >= 80) {
       acc[key].highPriorityCount += 1;
+    }
+    if (b.hasWhatsApp && b.whatsapp_number) {
+      acc[key].verifiedWhatsAppCount += 1;
     }
     return acc;
   }, {});
@@ -128,33 +140,38 @@ export function LocalityTab({
     )
     .sort((a, b) => b.count - a.count);
 
-  // Discovery Scan Trigger
-  const handleTriggerScan = () => {
+  // Discovery Scan Trigger (Phase 2 & Phase 11)
+  const handleTriggerScan = async () => {
     setIsScanning(true);
     setScanResultNotice(null);
 
-    setTimeout(() => {
-      const scanResult = executeDiscoveryScan(
-        selectedScanState, 
-        selectedScanCity || "Major Automotive Hub", 
-        businesses
-      );
+    try {
+      const scanResult = await executeDiscoveryScan({
+        selectedState: selectedScanState, 
+        selectedCity: selectedScanCity || "Commercial District", 
+        selectedCategory: selectedScanCategory,
+        selectedSubcategory: selectedScanSubcategory,
+        existingLeads: businesses
+      });
 
       setIsScanning(false);
 
       if (scanResult.addedCount > 0) {
         if (onDiscoveryAdd) {
-          onDiscoveryAdd(scanResult.newBusinesses);
+          onDiscoveryAdd(scanResult.deduplicatedLeads);
         }
-        const notice = `Discovered ${scanResult.scannedCount} studios in ${selectedScanState}. Added ${scanResult.addedCount} new verified leads (${scanResult.duplicatesFiltered} duplicate excluded).`;
+        const notice = `Discovered ${scanResult.scannedCount} businesses in ${selectedScanCity}, ${selectedScanState}. Added ${scanResult.addedCount} new verified leads (${scanResult.duplicatesFiltered} duplicates filtered by Place ID/Branch).`;
         setScanResultNotice({ type: "success", text: notice });
         if (onShowToast) onShowToast(notice);
       } else {
-        const notice = `Scan complete for ${selectedScanState}: All ${scanResult.scannedCount} studios already verified and indexed. Zero duplicates added.`;
+        const notice = `Scan complete for ${selectedScanCity}: All ${scanResult.scannedCount} businesses already indexed. Zero duplicates added.`;
         setScanResultNotice({ type: "info", text: notice });
         if (onShowToast) onShowToast(notice);
       }
-    }, 900);
+    } catch (err) {
+      setIsScanning(false);
+      setScanResultNotice({ type: "error", text: `Discovery error: ${err.message}` });
+    }
   };
 
   return (
@@ -165,7 +182,7 @@ export function LocalityTab({
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
               <span className="badge" style={{ background: "rgba(168, 85, 247, 0.2)", color: "#C084FC", border: "1px solid rgba(168, 85, 247, 0.3)" }}>
-                <MapPin size={12} /> Pan-India Geographic Intelligence
+                <MapPin size={12} /> Nationwide Geographic Coverage
               </span>
               <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
                 All 36 States & UTs Monitored
@@ -175,7 +192,7 @@ export function LocalityTab({
               Pan-India State & City Coverage Radar
             </h2>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem", maxWidth: "850px" }}>
-              Tracking digital penetration across India's car detailing hubs. High-density automotive centers in Maharashtra, Delhi NCR, Karnataka, Tamil Nadu, and Gujarat demonstrate the sharpest website deficits for premium PPF and Ceramic Coating studios.
+              Tracking digital penetration across India's automotive detailing, PPF, ceramic coating, and car washing hubs. Major automotive centers in Maharashtra, Delhi NCR, Karnataka, Tamil Nadu, and Gujarat show acute website deficits despite high review volumes.
             </p>
           </div>
 
@@ -193,29 +210,32 @@ export function LocalityTab({
               <div style={{ fontFamily: "var(--font-heading)", fontSize: "1.5rem", fontWeight: 700, color: "#818CF8" }}>
                 {Object.keys(cityMap).length}
               </div>
-              <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Metros to Tier-3</div>
+              <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>30 Metros & Tier 2/3</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Interactive Discovery Scan Box */}
+      {/* Interactive Discovery Scan Box (Phase 2, 6, 11) */}
       <div className="glass-card" style={{ marginBottom: "24px", border: "1px solid rgba(99, 102, 241, 0.35)", background: "rgba(15, 23, 42, 0.85)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-          <Radio size={16} color="#10B981" />
-          <h3 style={{ fontSize: "1.05rem", color: "#fff" }}>
-            Nationwide Multi-State Discovery Engine
-          </h3>
-          <span className="badge" style={{ background: "rgba(16, 185, 129, 0.2)", color: "#34D399", fontSize: "0.72rem" }}>
-            Automated Deduplication Active
-          </span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Radio size={16} color="#10B981" />
+            <h3 style={{ fontSize: "1.05rem", color: "#fff" }}>
+              Google Places Compliant Discovery Engine
+            </h3>
+            <span className="badge" style={{ background: "rgba(16, 185, 129, 0.2)", color: "#34D399", fontSize: "0.72rem" }}>
+              Deduplication Active
+            </span>
+          </div>
+          <GooglePlacesAttribution />
         </div>
 
         <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "16px" }}>
-          Launch live reconnaissance across any state or city to uncover newly registered detailing studios, PPF centers, and ceramic coating studios without websites.
+          Initiate discovery across any Indian state or city to identify newly registered detailing studios, PPF installers, ceramic coating centers, and car spas. Uses official Google Places API and independent verification.
         </p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", alignItems: "end" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px", alignItems: "end" }}>
           <div>
             <label style={{ display: "block", fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: "4px" }}>
               Target State / UT:
@@ -226,7 +246,7 @@ export function LocalityTab({
               onChange={(e) => setSelectedScanState(e.target.value)}
               style={{ width: "100%" }}
             >
-              {ALL_INDIAN_STATES.map((st) => (
+              {ALL_INDIAN_STATES.filter(s => s !== "All India").map((st) => (
                 <option key={st} value={st}>{st}</option>
               ))}
             </select>
@@ -236,28 +256,49 @@ export function LocalityTab({
             <label style={{ display: "block", fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: "4px" }}>
               City / Commercial Hub:
             </label>
-            <input
-              type="text"
-              className="custom-input"
-              placeholder="e.g. Pune, Navi Mumbai, Nagpur..."
+            <select
+              className="custom-select"
               value={selectedScanCity}
               onChange={(e) => setSelectedScanCity(e.target.value)}
               style={{ width: "100%" }}
-            />
+            >
+              {PRIORITY_INDIAN_CITIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label style={{ display: "block", fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: "4px" }}>
-              Service Category:
+              Category (Phase 1):
             </label>
             <select
               className="custom-select"
               value={selectedScanCategory}
-              onChange={(e) => setSelectedScanCategory(e.target.value)}
+              onChange={(e) => {
+                setSelectedScanCategory(e.target.value);
+                setSelectedScanSubcategory(DISCOVERY_CATEGORIES[e.target.value]?.[0] || "");
+              }}
               style={{ width: "100%" }}
             >
-              {SERVICE_CATEGORIES.map((cat) => (
+              {Object.keys(DISCOVERY_CATEGORIES).map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: "4px" }}>
+              Subcategory:
+            </label>
+            <select
+              className="custom-select"
+              value={selectedScanSubcategory}
+              onChange={(e) => setSelectedScanSubcategory(e.target.value)}
+              style={{ width: "100%" }}
+            >
+              {availableSubcategories.map((sub) => (
+                <option key={sub} value={sub}>{sub}</option>
               ))}
             </select>
           </div>
@@ -272,12 +313,12 @@ export function LocalityTab({
               {isScanning ? (
                 <>
                   <RefreshCw size={15} className="spin-animation" />
-                  <span>Scanning GMB & Web...</span>
+                  <span>Scanning Places...</span>
                 </>
               ) : (
                 <>
                   <Sparkles size={15} />
-                  <span>Execute Discovery Scan</span>
+                  <span>Execute Discovery</span>
                 </>
               )}
             </button>
@@ -342,7 +383,7 @@ export function LocalityTab({
                   <div>
                     <h3 style={{ fontSize: "1.15rem" }}>{st.state}</h3>
                     <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-                      Zone: <strong style={{ color: "var(--text-primary)" }}>{st.zone}</strong> • {st.citiesCount} Cities
+                      Zone: <strong style={{ color: "var(--text-primary)" }}>{st.zone}</strong> • {st.citiesCount} Cities Covered
                     </div>
                   </div>
                   <span className="badge" style={{ background: "rgba(99, 102, 241, 0.15)", color: "#818CF8", fontSize: "0.82rem" }}>
@@ -374,9 +415,9 @@ export function LocalityTab({
                   </div>
 
                   <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "10px", borderRadius: "8px" }}>
-                    <div style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>High-Priority</div>
-                    <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#F59E0B" }}>
-                      {st.highPriorityCount}
+                    <div style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>Verified WhatsApp</div>
+                    <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#10B981" }}>
+                      {st.verifiedWhatsAppCount}
                     </div>
                   </div>
                 </div>
@@ -460,9 +501,9 @@ export function LocalityTab({
                   </div>
 
                   <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "10px", borderRadius: "8px" }}>
-                    <div style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>High Priority</div>
-                    <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#F59E0B" }}>
-                      {c.highPriorityCount}
+                    <div style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>Verified WhatsApp</div>
+                    <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#10B981" }}>
+                      {c.verifiedWhatsAppCount}
                     </div>
                   </div>
                 </div>

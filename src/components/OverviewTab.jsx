@@ -8,9 +8,14 @@ import {
   Star, 
   MapPin, 
   Sparkles,
-  Zap
+  Zap,
+  MessageSquare,
+  ShieldCheck,
+  CheckCircle2,
+  Car
 } from "lucide-react";
 import { getPriorityBadgeColor } from "../utils/scoring";
+import { GooglePlacesAttribution } from "../services/googlePlacesService";
 
 export function OverviewTab({ 
   businesses = [], 
@@ -19,20 +24,33 @@ export function OverviewTab({
 }) {
   const total = businesses.length || 1;
   const noWebsite = businesses.filter(b => b.websiteStatus === "No" || b.websiteStatus === "Unverified").length;
+  const withWebsite = businesses.filter(b => b.websiteStatus === "Yes").length;
   const highPriority = businesses.filter(b => b.opportunityScore >= 80).length;
   const medHighPriority = businesses.filter(b => b.opportunityScore >= 60 && b.opportunityScore < 80).length;
   const withPhone = businesses.filter(b => b.hasPhone).length;
+  const withWhatsApp = businesses.filter(b => b.hasWhatsApp && b.whatsapp_number).length;
   const avgScore = total > 0 ? (businesses.reduce((acc, b) => acc + (b.opportunityScore || 0), 0) / total).toFixed(1) : "0.0";
 
-  // Group by State for nationwide spread
+  // Category Counts (Phase 1 & Phase 7)
+  const categoryCounts = {
+    "Car Detailing": businesses.filter(b => b.category === "Car Detailing").length,
+    "Paint Protection": businesses.filter(b => b.category === "Paint Protection").length,
+    "Car Washing": businesses.filter(b => b.category === "Car Washing").length,
+    "Other Automotive Services": businesses.filter(b => b.category === "Other Automotive Services").length
+  };
+
+  // State Counts for nationwide spread
   const stateCounts = businesses.reduce((acc, b) => {
     const st = b.state || "Delhi";
     if (!acc[st]) {
-      acc[st] = { count: 0, noWeb: 0 };
+      acc[st] = { count: 0, noWeb: 0, wa: 0 };
     }
     acc[st].count += 1;
     if (b.websiteStatus === "No" || b.websiteStatus === "Unverified") {
       acc[st].noWeb += 1;
+    }
+    if (b.hasWhatsApp && b.whatsapp_number) {
+      acc[st].wa += 1;
     }
     return acc;
   }, {});
@@ -48,28 +66,55 @@ export function OverviewTab({
 
   return (
     <div className="overview-tab-container">
-      {/* KPI Cards Grid */}
-      <div className="kpi-grid">
+      {/* KPI Cards Grid — 6 Strategic Metrics (Phase 7) */}
+      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+        {/* 1. Total Discovered Businesses */}
         <div className="kpi-card" style={{ "--kpi-color": "#6366F1" }}>
           <div className="kpi-card-header">
-            <span className="kpi-card-title">Discovered Leads</span>
+            <span className="kpi-card-title">Discovered Businesses</span>
             <div className="kpi-icon-wrap"><Building2 size={18} /></div>
           </div>
           <div className="kpi-value">{total}</div>
-          <div className="kpi-subtext">Pan-India Detailing Studios (36 States & UTs)</div>
+          <div className="kpi-subtext">Across All 36 Indian States & UTs</div>
         </div>
 
+        {/* 2. Businesses Without Website */}
         <div className="kpi-card" style={{ "--kpi-color": "#EF4444" }}>
           <div className="kpi-card-header">
-            <span className="kpi-card-title">No Website (Web Pitch)</span>
+            <span className="kpi-card-title">Without Official Website</span>
             <div className="kpi-icon-wrap"><Globe2 size={18} /></div>
           </div>
           <div className="kpi-value">
-            {noWebsite} <span style={{ fontSize: '1rem', color: '#EF4444' }}>({Math.round((noWebsite / total) * 100)}%)</span>
+            {noWebsite} <span style={{ fontSize: '0.95rem', color: '#EF4444' }}>({Math.round((noWebsite / total) * 100)}%)</span>
           </div>
-          <div className="kpi-subtext">Immediate target for ₹30k–₹50k website packages</div>
+          <div className="kpi-subtext">Immediate target for website packages</div>
         </div>
 
+        {/* 3. Verified WhatsApp Contacts */}
+        <div className="kpi-card" style={{ "--kpi-color": "#10B981" }}>
+          <div className="kpi-card-header">
+            <span className="kpi-card-title">Verified WhatsApp</span>
+            <div className="kpi-icon-wrap"><MessageSquare size={18} /></div>
+          </div>
+          <div className="kpi-value">
+            {withWhatsApp} <span style={{ fontSize: '0.95rem', color: '#10B981' }}>({Math.round((withWhatsApp / total) * 100)}%)</span>
+          </div>
+          <div className="kpi-subtext">Direct active mobile accounts</div>
+        </div>
+
+        {/* 4. Verified Phone Numbers */}
+        <div className="kpi-card" style={{ "--kpi-color": "#3B82F6" }}>
+          <div className="kpi-card-header">
+            <span className="kpi-card-title">Verified Phone Contacts</span>
+            <div className="kpi-icon-wrap"><PhoneCall size={18} /></div>
+          </div>
+          <div className="kpi-value">
+            {withPhone} <span style={{ fontSize: '0.95rem', color: '#3B82F6' }}>({Math.round((withPhone / total) * 100)}%)</span>
+          </div>
+          <div className="kpi-subtext">{withPhone} of {total} studios reachable via Call</div>
+        </div>
+
+        {/* 5. High-Priority Leads */}
         <div className="kpi-card" style={{ "--kpi-color": "#F59E0B" }}>
           <div className="kpi-card-header">
             <span className="kpi-card-title">High-Priority Leads</span>
@@ -79,22 +124,14 @@ export function OverviewTab({
           <div className="kpi-subtext">Score 80–100 (Immediate sales pipeline)</div>
         </div>
 
-        <div className="kpi-card" style={{ "--kpi-color": "#10B981" }}>
-          <div className="kpi-card-header">
-            <span className="kpi-card-title">Verified Phone Rate</span>
-            <div className="kpi-icon-wrap"><PhoneCall size={18} /></div>
-          </div>
-          <div className="kpi-value">{Math.round((withPhone / total) * 100)}%</div>
-          <div className="kpi-subtext">{withPhone} of {total} studios with direct phone numbers</div>
-        </div>
-
+        {/* 6. Avg Opportunity Score */}
         <div className="kpi-card" style={{ "--kpi-color": "#06B6D4" }}>
           <div className="kpi-card-header">
             <span className="kpi-card-title">Avg Opportunity Score</span>
             <div className="kpi-icon-wrap"><TrendingUp size={18} /></div>
           </div>
           <div className="kpi-value">{avgScore}<span style={{ fontSize: '1rem' }}>/100</span></div>
-          <div className="kpi-subtext">Substantial agency upsell potential nationwide</div>
+          <div className="kpi-subtext">Agency conversion & upsell potential</div>
         </div>
       </div>
 
@@ -109,10 +146,10 @@ export function OverviewTab({
               <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Nationwide Intelligence 2026</span>
             </div>
             <h2 style={{ fontSize: "1.35rem", marginBottom: "8px" }}>
-              Pan-India Car Detailing Industry: High-Ticket Demand Meets Massive Digital Gaps
+              Pan-India Automotive Detailing Industry: Premium Demand Meets Massive Digital Gaps
             </h2>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", maxWidth: "880px", lineHeight: 1.6 }}>
-              Across Indian metros, tier-2 and tier-3 cities, car owners spending ₹50,000 to ₹1,80,000 on Paint Protection Film (PPF), Ceramic and Graphene coatings search on Google first. Yet <strong>{Math.round((noWebsite / total) * 100)}% of highly-rated car detailing studios nationwide operate without an official website</strong>, relying solely on phone calls, Instagram, or local word-of-mouth. This opens an immense, multi-crore market for Virtual Agency to deliver turn-key websites, WhatsApp booking automation, and SEO retainers.
+              Across India’s top 30 cities and emerging commercial hubs, car owners spending ₹40,000 to ₹1,50,000 on Paint Protection Film (PPF), Ceramic Coatings, and Car Spas search on Google first. Yet <strong>{Math.round((noWebsite / total) * 100)}% of highly-rated studios nationwide operate without an official website</strong>. This creates an immediate opportunity for Virtual Agency to onboard these businesses with dark-aesthetic web portals, WhatsApp lead funnels, and Local SEO retainers.
             </p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -132,64 +169,67 @@ export function OverviewTab({
         </div>
       </div>
 
-      {/* Dual Column: Pipeline Analytics & State Distribution */}
+      {/* Two Column: Category Breakdown & Top State Distribution */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: "24px", marginBottom: "32px" }}>
-        {/* Pipeline Distribution Card */}
+        {/* Category Breakdown (Phase 1 & Phase 7) */}
         <div className="glass-card">
-          <h3 style={{ fontSize: "1.1rem", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <TrendingUp size={18} color="#6366F1" /> Lead Opportunity Pipeline
-          </h3>
-          
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {/* High Priority Bar */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
-                <span style={{ color: "#EF4444", fontWeight: 600 }}>High Priority (Score 80–100) — Ready for Immediate Pitch</span>
-                <strong>{highPriority} studios ({Math.round((highPriority / total) * 100)}%)</strong>
-              </div>
-              <div style={{ height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
-                <div style={{ width: `${(highPriority / total) * 100}%`, height: "100%", background: "linear-gradient(90deg, #EF4444, #F87171)" }}></div>
-              </div>
-            </div>
-
-            {/* Medium-High Priority Bar */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
-                <span style={{ color: "#F59E0B", fontWeight: 600 }}>Medium-High Priority (Score 60–79) — Website / CRO Upgrade</span>
-                <strong>{medHighPriority} studios ({Math.round((medHighPriority / total) * 100)}%)</strong>
-              </div>
-              <div style={{ height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
-                <div style={{ width: `${(medHighPriority / total) * 100}%`, height: "100%", background: "linear-gradient(90deg, #F59E0B, #FBBF24)" }}></div>
-              </div>
-            </div>
-
-            {/* Moderate Priority Bar */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
-                <span style={{ color: "#3B82F6", fontWeight: 600 }}>Moderate Priority (Score 40–59) — SEO & Paid Ads Retainer</span>
-                <strong>{Math.max(0, total - highPriority - medHighPriority)} studios ({Math.round((Math.max(0, total - highPriority - medHighPriority) / total) * 100)}%)</strong>
-              </div>
-              <div style={{ height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
-                <div style={{ width: `${(Math.max(0, total - highPriority - medHighPriority) / total) * 100}%`, height: "100%", background: "linear-gradient(90deg, #3B82F6, #60A5FA)" }}></div>
-              </div>
-            </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h3 style={{ fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px" }}>
+              <Car size={18} color="#6366F1" /> Discovered Businesses by Category
+            </h3>
+            <span className="badge" style={{ background: "rgba(99, 102, 241, 0.15)", color: "#818CF8", fontSize: "0.72rem" }}>
+              4 Core Segments
+            </span>
           </div>
 
-          <div style={{ marginTop: "24px", paddingTop: "18px", borderTop: "1px solid var(--border-subtle)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", fontSize: "0.82rem" }}>
-            <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "12px", borderRadius: "8px" }}>
-              <div style={{ color: "var(--text-muted)", marginBottom: "4px" }}>Dominant Lead Setup</div>
-              <strong style={{ color: "#F8FAFC", fontSize: "0.95rem" }}>Direct Phone / WhatsApp</strong>
-              <div style={{ color: "#94A3B8", fontSize: "0.74rem", marginTop: "2px" }}>Most lack automated online booking</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {/* Category A: Car Detailing */}
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
+                <span style={{ color: "#818CF8", fontWeight: 600 }}>Category A: Car Detailing Studios & Car Spa</span>
+                <strong>{categoryCounts["Car Detailing"]} studios ({Math.round((categoryCounts["Car Detailing"] / total) * 100)}%)</strong>
+              </div>
+              <div style={{ height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                <div style={{ width: `${(categoryCounts["Car Detailing"] / total) * 100}%`, height: "100%", background: "#6366F1" }}></div>
+              </div>
             </div>
-            <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "12px", borderRadius: "8px" }}>
-              <div style={{ color: "var(--text-muted)", marginBottom: "4px" }}>Target Package Range</div>
-              <strong style={{ color: "#10B981", fontSize: "0.95rem" }}>₹30,000 – ₹55,000</strong>
-              <div style={{ color: "#94A3B8", fontSize: "0.74rem", marginTop: "2px" }}>One-time + ₹10k–₹25k/mo SEO</div>
+
+            {/* Category B: Paint Protection */}
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
+                <span style={{ color: "#F59E0B", fontWeight: 600 }}>Category B: Paint Protection (PPF & Ceramic)</span>
+                <strong>{categoryCounts["Paint Protection"]} studios ({Math.round((categoryCounts["Paint Protection"] / total) * 100)}%)</strong>
+              </div>
+              <div style={{ height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                <div style={{ width: `${(categoryCounts["Paint Protection"] / total) * 100}%`, height: "100%", background: "#F59E0B" }}></div>
+              </div>
+            </div>
+
+            {/* Category C: Car Washing */}
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
+                <span style={{ color: "#06B6D4", fontWeight: 600 }}>Category C: Car Washing & Steam Cleaning</span>
+                <strong>{categoryCounts["Car Washing"]} studios ({Math.round((categoryCounts["Car Washing"] / total) * 100)}%)</strong>
+              </div>
+              <div style={{ height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                <div style={{ width: `${(categoryCounts["Car Washing"] / total) * 100}%`, height: "100%", background: "#06B6D4" }}></div>
+              </div>
+            </div>
+
+            {/* Category D: Other Automotive Services */}
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
+                <span style={{ color: "#10B981", fontWeight: 600 }}>Category D: Wrapping, Sun Film & Restoration</span>
+                <strong>{categoryCounts["Other Automotive Services"]} studios ({Math.round((categoryCounts["Other Automotive Services"] / total) * 100)}%)</strong>
+              </div>
+              <div style={{ height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                <div style={{ width: `${(categoryCounts["Other Automotive Services"] / total) * 100}%`, height: "100%", background: "#10B981" }}></div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* State Saturation Summary */}
+        {/* State Saturation & Volume Breakdown */}
         <div className="glass-card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <h3 style={{ fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px" }}>
@@ -220,7 +260,7 @@ export function OverviewTab({
                 <div>
                   <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{st}</span>
                   <div style={{ fontSize: "0.72rem", color: "#EF4444" }}>
-                    {data.noWeb} without site
+                    {data.noWeb} without site • {data.wa} on WA
                   </div>
                 </div>
                 <span className="badge" style={{ background: "rgba(99, 102, 241, 0.15)", color: "#818CF8" }}>
@@ -259,7 +299,7 @@ export function OverviewTab({
                     <h3>{b.name}</h3>
                     <div className="lead-locality">
                       <MapPin size={13} color="#94A3B8" />
-                      <span>{b.city || b.locality}, {b.state}</span>
+                      <span>{b.locality || b.city}, {b.city}, {b.state}</span>
                     </div>
                   </div>
                   <div 
@@ -311,6 +351,13 @@ export function OverviewTab({
             </div>
           );
         })}
+      </div>
+
+      <div style={{ marginTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+          Data collected in compliance with Google Maps Platform API Policies & Licensed Directories
+        </span>
+        <GooglePlacesAttribution />
       </div>
     </div>
   );

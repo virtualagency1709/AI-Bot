@@ -96,7 +96,7 @@ export function Header({
             <div className="config-chip">
               <Car size={13} color="#06B6D4" />
               <span>Category:</span>
-              <span className="val">Car Detailing (PPF, Ceramic, Car Spa)</span>
+              <span className="val">Car Detailing, PPF, Ceramic & Car Washing</span>
             </div>
             <div className="config-chip">
               <Layers size={13} color="#A855F7" />

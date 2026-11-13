@@ -9,7 +9,8 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { exportLeadsToExcel, exportLeadsToCsv } from "../utils/excelExport";
-import { ALL_INDIAN_STATES } from "../data/panIndiaBusinesses";
+import { ALL_INDIAN_STATES, DISCOVERY_CATEGORIES } from "../data/panIndiaBusinesses";
+import { GooglePlacesAttribution } from "../services/googlePlacesService";
 
 export function ExportTab({ 
   businesses = [], 
@@ -17,26 +18,30 @@ export function ExportTab({
 }) {
   const [downloading, setDownloading] = useState(false);
   const [exportState, setExportState] = useState("All India");
-  const [exportScope, setExportScope] = useState("all"); // 'all', 'no_website', 'high_priority'
+  const [exportCategory, setExportCategory] = useState("all");
+  const [exportScope, setExportScope] = useState("all"); // 'all', 'no_website', 'verified_wa', 'high_priority'
 
   // Filter businesses according to user selection
   const scopedBusinesses = businesses.filter((b) => {
     const matchesState = exportState === "All India" || b.state === exportState;
+    const matchesCategory = exportCategory === "all" || b.category === exportCategory;
     let matchesScope = true;
     if (exportScope === "no_website") {
       matchesScope = b.websiteStatus === "No" || b.websiteStatus === "Unverified";
+    } else if (exportScope === "verified_wa") {
+      matchesScope = Boolean(b.hasWhatsApp && b.whatsapp_number);
     } else if (exportScope === "high_priority") {
       matchesScope = b.opportunityScore >= 80;
     }
-    return matchesState && matchesScope;
+    return matchesState && matchesCategory && matchesScope;
   });
 
   const handleExcelExport = () => {
     setDownloading(true);
     try {
       const stateSuffix = exportState === "All India" ? "PanIndia" : exportState.replace(/\s+/g, "");
-      const scopeSuffix = exportScope === "no_website" ? "_NoWebsite" : exportScope === "high_priority" ? "_HighPriority" : "";
-      const filename = `VirtualAgency_${stateSuffix}_CarDetailing_Prospects${scopeSuffix}_2026.xlsx`;
+      const scopeSuffix = exportScope === "no_website" ? "_NoWebsite" : exportScope === "verified_wa" ? "_VerifiedWhatsApp" : exportScope === "high_priority" ? "_HighPriority" : "";
+      const filename = `VirtualAgency_${stateSuffix}_Automotive_Leads${scopeSuffix}_2026.xlsx`;
       
       exportLeadsToExcel(scopedBusinesses, filename);
       if (onShowToast) onShowToast(`7-Sheet Excel Report (${scopedBusinesses.length} leads) downloaded!`);
@@ -51,8 +56,8 @@ export function ExportTab({
   const handleCsvExport = () => {
     try {
       const stateSuffix = exportState === "All India" ? "PanIndia" : exportState.replace(/\s+/g, "");
-      const scopeSuffix = exportScope === "no_website" ? "_NoWebsite" : exportScope === "high_priority" ? "_HighPriority" : "";
-      const filename = `VirtualAgency_${stateSuffix}_CarDetailing_Leads${scopeSuffix}_2026.csv`;
+      const scopeSuffix = exportScope === "no_website" ? "_NoWebsite" : exportScope === "verified_wa" ? "_VerifiedWhatsApp" : exportScope === "high_priority" ? "_HighPriority" : "";
+      const filename = `VirtualAgency_${stateSuffix}_Automotive_Leads${scopeSuffix}_2026.csv`;
 
       exportLeadsToCsv(scopedBusinesses, filename);
       if (onShowToast) onShowToast(`CSV leads file (${scopedBusinesses.length} leads) downloaded!`);
@@ -66,7 +71,7 @@ export function ExportTab({
     {
       num: 1,
       name: "Pan-India All Leads",
-      desc: "Complete master record of discovered car detailing studios across India with rating, reviews, website status, 21 complete data fields, opportunity score, lead channel, and full address.",
+      desc: "Complete master record of discovered businesses across India with rating, reviews, website status, 21 complete data fields, Place ID, opportunity score, lead channel, and full address.",
       count: scopedBusinesses.length
     },
     {
@@ -125,7 +130,7 @@ export function ExportTab({
               Export Nationwide Lead Database & Competitor Intelligence
             </h2>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem", maxWidth: "850px" }}>
-              Generate structured, agency-ready Excel workbooks formatted into 7 dedicated sheets. Filter by State or export all 36 Indian States and Union Territories. Ideal for CRM imports, sales representative cold calling lists, or client presentation decks.
+              Generate structured, agency-ready Excel workbooks formatted into 7 dedicated sheets. Filter by State, Category, or export all 36 Indian States and Union Territories. Ideal for CRM imports, sales representative cold calling lists, or client presentation decks.
             </p>
           </div>
 
@@ -161,11 +166,25 @@ export function ExportTab({
               className="custom-select"
               value={exportState}
               onChange={(e) => setExportState(e.target.value)}
-              style={{ minWidth: "200px" }}
+              style={{ minWidth: "180px" }}
             >
               <option value="All India">State: Pan-India (All 36 States/UTs)</option>
-              {ALL_INDIAN_STATES.map((st) => (
+              {ALL_INDIAN_STATES.filter(s => s !== "All India").map((st) => (
                 <option key={st} value={st}>{st}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <select
+              className="custom-select"
+              value={exportCategory}
+              onChange={(e) => setExportCategory(e.target.value)}
+              style={{ minWidth: "180px" }}
+            >
+              <option value="all">Category: All Categories</option>
+              {Object.keys(DISCOVERY_CATEGORIES).map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
           </div>
@@ -175,10 +194,11 @@ export function ExportTab({
               className="custom-select"
               value={exportScope}
               onChange={(e) => setExportScope(e.target.value)}
-              style={{ minWidth: "200px" }}
+              style={{ minWidth: "180px" }}
             >
               <option value="all">Scope: All Discovered Leads</option>
               <option value="no_website">Target: No Website Leads Only</option>
+              <option value="verified_wa">Target: Verified WhatsApp Only</option>
               <option value="high_priority">Target: High Priority (Score 80–100)</option>
             </select>
           </div>
@@ -238,25 +258,29 @@ export function ExportTab({
       </div>
 
       {/* Compliance & Methodology Audit */}
-      <div className="glass-card" style={{ borderLeft: "4px solid #6366F1" }}>
+      <div className="glass-card" style={{ borderLeft: "4px solid #6366F1", marginBottom: "24px" }}>
         <h3 style={{ fontSize: "1.1rem", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <ShieldCheck size={18} color="#6366F1" /> Compliance, Privacy & Data Quality Assurance
+          <ShieldCheck size={18} color="#6366F1" /> Compliance, Privacy & Google Places Licensing Assurance
         </h3>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", fontSize: "0.84rem", color: "var(--text-secondary)" }}>
           <div>
             <strong style={{ color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>Authorized Data Sources:</strong>
-            Publicly listed Google Business Profiles, authorized mapping directory indexes, and publicly accessible web landing pages. No CAPTCHAs or private APIs bypassed.
+            Publicly listed Google Business Profiles, official Google Places API endpoints, and licensed directories. Place IDs are used as permitted identifiers. Zero automated scrapers or bypasses used.
           </div>
           <div>
-            <strong style={{ color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>Deduplication Guarantee:</strong>
-            Cross-referenced by business phone number, normalized street address, and Google Maps place identifier to eliminate duplicates.
+            <strong style={{ color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>Branch Preservation Guarantee:</strong>
+            Multi-branch studios in different physical locations are maintained as distinct records and never merged.
           </div>
           <div>
-            <strong style={{ color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>No Fabricated Records:</strong>
-            Unavailable phone numbers or missing websites are strictly labeled as "Not found" or "Unverified" rather than estimated.
+            <strong style={{ color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>Verified WhatsApp Verification:</strong>
+            Only numbers with active WhatsApp accounts are labeled as WhatsApp contacts; landlines and unverified numbers are strictly preserved as Call-Only contacts.
           </div>
         </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <GooglePlacesAttribution />
       </div>
     </div>
   );

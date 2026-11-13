@@ -189,8 +189,10 @@ Virtual Agency | 📞 +91 78380 56998 | 🌐 https://virtualagency.in/`;
 • Recommended Action: ${recommendation}
 • Virtual Agency Target Price: ${business.virtualAgencyRecommendation?.suggestedPackagePrice || "₹28,000"}`;
 
-  // WhatsApp link generator using target phone without duplicate country code
-  const waUrl = buildWhatsAppLink(phone, whatsappPitch);
+  // WhatsApp link generator strictly ONLY if business has a verified WhatsApp account
+  const waUrl = (business.hasWhatsApp && (business.whatsapp_number || business.phone))
+    ? buildWhatsAppLink(business.whatsapp_number || business.phone, whatsappPitch)
+    : null;
 
   return {
     whatsappPitch,

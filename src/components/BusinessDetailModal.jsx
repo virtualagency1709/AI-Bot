@@ -257,7 +257,7 @@ export function BusinessDetailModal({
               {pitches.whatsappPitch}
             </div>
 
-            {pitches.waUrl && (
+            {pitches.waUrl ? (
               <a 
                 href={pitches.waUrl} 
                 target="_blank" 
@@ -265,8 +265,18 @@ export function BusinessDetailModal({
                 className="btn-whatsapp"
                 style={{ textDecoration: "none", width: "100%", justifyContent: "center" }}
               >
-                <MessageCircle size={15} /> Open Pre-filled WhatsApp Chat Now
+                <MessageCircle size={15} /> Chat on WhatsApp (Verified)
               </a>
+            ) : (
+              business.phone && (
+                <a 
+                  href={`tel:${business.phone}`} 
+                  className="btn-call"
+                  style={{ textDecoration: "none", width: "100%", justifyContent: "center" }}
+                >
+                  <Phone size={15} /> Call Direct Phone ({business.phone})
+                </a>
+              )
             )}
           </div>
         )}

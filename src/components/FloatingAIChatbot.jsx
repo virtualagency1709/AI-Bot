@@ -12,7 +12,7 @@ import {
   Flame, 
   RotateCcw 
 } from "lucide-react";
-import { VIRTUAL_AGENCY_CONTACT } from "../config/agencyContact";
+import { VIRTUAL_AGENCY_CONTACT, buildWhatsAppLink } from "../config/agencyContact";
 
 export function FloatingAIChatbot({ businesses = [], onSelectBusiness }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,10 +22,10 @@ export function FloatingAIChatbot({ businesses = [], onSelectBusiness }) {
       sender: "ai",
       text: "Hello! Welcome to Virtual Agency. How can I help you with your business leads today?",
       options: [
-        "How many leads have no website?",
-        "Show top leads in Maharashtra",
-        "High-priority prospects",
-        "Connect on WhatsApp"
+        "Find PPF installers in Mumbai",
+        "Find ceramic coating in Bengaluru",
+        "Detailing without websites in Chandigarh",
+        "Verified WhatsApp in Gurugram"
       ],
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     }
@@ -46,16 +46,20 @@ export function FloatingAIChatbot({ businesses = [], onSelectBusiness }) {
   // Compute live statistics from the actual business database
   const totalCount = businesses.length;
   const noWebsiteLeads = businesses.filter(
-    (b) => b.websiteStatus === "No" || b.websiteStatus === "Unverified" || b.websiteCategory?.includes("NO_WEBSITE")
+    (b) => b.websiteStatus === "No" || b.websiteStatus === "Unverified" || b.websiteCategory?.includes("NO WEBSITE")
   );
   const highPriorityLeads = businesses.filter((b) => b.opportunityScore >= 80);
 
-  // Intelligent responder matching natural user queries against real live leads
+  // Intelligent responder matching natural user queries against real live leads (Phase 9)
   const processQuery = (rawQuery) => {
     const query = rawQuery.toLowerCase().trim();
 
-    // 1. WhatsApp / Contact Hand-off
-    if (query.includes("whatsapp") || query.includes("contact") || query.includes("call") || query.includes("agency number") || query.includes("phone")) {
+    // 1. WhatsApp / Virtual Agency Contact Hand-off
+    if (
+      query === "connect on whatsapp" || 
+      query === "contact virtual agency" || 
+      (query.includes("agency") && (query.includes("number") || query.includes("contact") || query.includes("whatsapp")))
+    ) {
       const waLink = VIRTUAL_AGENCY_CONTACT.getWhatsAppUrl(
         "Hello Virtual Agency, I would like to inquire about car detailing lead acquisition and website solutions."
       );
@@ -69,68 +73,144 @@ export function FloatingAIChatbot({ businesses = [], onSelectBusiness }) {
       };
     }
 
-    // 2. No Website count / query
-    if (query.includes("no website") || query.includes("without website") || query.includes("without a website") || query.includes("no site")) {
-      const percentage = Math.round((noWebsiteLeads.length / totalCount) * 100);
-      const top3 = noWebsiteLeads.slice(0, 3);
-      const topList = top3.map(b => `• ${b.name} (${b.city}, ${b.state}) - ${b.rating}★ (${b.reviewCount} reviews)`).join("\n");
+    // 2. Phase 9 Specific Natural Queries & City/Category Matchers
+    // Extract City / State
+    const knownLocations = [
+      "delhi", "mumbai", "navi mumbai", "thane", "pune", "bengaluru", "bangalore", 
+      "hyderabad", "chennai", "kolkata", "ahmedabad", "surat", "jaipur", "chandigarh", 
+      "gurugram", "gurgaon", "noida", "faridabad", "lucknow", "indore", "bhopal", 
+      "nagpur", "kochi", "coimbatore", "ludhiana", "amritsar", "dehradun", "patna", 
+      "ranchi", "bhubaneswar", "guwahati", "visakhapatnam", "maharashtra", "karnataka", 
+      "tamil nadu", "gujarat", "punjab", "haryana", "rajasthan", "uttar pradesh"
+    ];
+
+    const matchedLocation = knownLocations.find(loc => query.includes(loc));
+
+    // Detect Service / Category
+    const isPpf = query.includes("ppf") || query.includes("paint protection film");
+    const isCeramic = query.includes("ceramic") || query.includes("graphene");
+    const isWash = query.includes("washing") || query.includes("car wash") || query.includes("cleaning");
+    const isDetailing = query.includes("detailing") || query.includes("car spa") || query.includes("polishing");
+
+    // Detect Website Status & WhatsApp verification filters
+    const wantsNoWebsite = query.includes("no website") || query.includes("without website") || query.includes("without a website") || query.includes("no site");
+    const wantsVerifiedWhatsApp = query.includes("whatsapp") && (query.includes("verified") || query.includes("contact") || query.includes("in "));
+
+    // Filter matching actual businesses
+    let matches = [...businesses];
+
+    if (matchedLocation) {
+      matches = matches.filter(b => {
+        const c = (b.city || "").toLowerCase();
+        const s = (b.state || "").toLowerCase();
+        const l = (b.locality || "").toLowerCase();
+        if (matchedLocation === "bangalore" && (c.includes("bengaluru") || s.includes("karnataka"))) return true;
+        if (matchedLocation === "gurgaon" && (c.includes("gurugram") || s.includes("haryana"))) return true;
+        return c.includes(matchedLocation) || s.includes(matchedLocation) || l.includes(matchedLocation);
+      });
+    }
+
+    if (isPpf) {
+      matches = matches.filter(b => 
+        b.category === "Paint Protection" || 
+        (b.subcategory && b.subcategory.toLowerCase().includes("ppf")) ||
+        (b.services && b.services.some(s => s.toLowerCase().includes("ppf")))
+      );
+    } else if (isCeramic) {
+      matches = matches.filter(b => 
+        (b.subcategory && b.subcategory.toLowerCase().includes("ceramic")) ||
+        (b.services && b.services.some(s => s.toLowerCase().includes("ceramic") || s.toLowerCase().includes("graphene")))
+      );
+    } else if (isWash) {
+      matches = matches.filter(b => 
+        b.category === "Car Washing" ||
+        (b.subcategory && b.subcategory.toLowerCase().includes("wash")) ||
+        (b.services && b.services.some(s => s.toLowerCase().includes("wash")))
+      );
+    } else if (isDetailing) {
+      matches = matches.filter(b => 
+        b.category === "Car Detailing" ||
+        (b.services && b.services.some(s => s.toLowerCase().includes("detail")))
+      );
+    }
+
+    if (wantsNoWebsite) {
+      matches = matches.filter(b => b.websiteStatus === "No" || b.websiteStatus === "Unverified");
+    }
+
+    if (wantsVerifiedWhatsApp) {
+      matches = matches.filter(b => b.hasWhatsApp && b.whatsapp_number);
+    }
+
+    // If query was specific and we found matches:
+    if (matchedLocation || isPpf || isCeramic || isWash || wantsNoWebsite || wantsVerifiedWhatsApp) {
+      if (matches.length === 0) {
+        return {
+          text: `No matching businesses found in our verified repository for "${rawQuery}".\n\nTry searching another city (e.g., Mumbai, Delhi, Bengaluru, Pune, Chandigarh) or use the Locality Tab to run a live Google Places scan.`,
+          options: [
+            "Find PPF installers in Mumbai",
+            "Find ceramic coating in Bengaluru",
+            "Detailing without websites in Chandigarh",
+            "Verified WhatsApp in Gurugram"
+          ]
+        };
+      }
+
+      const topResults = matches.slice(0, 4);
+      const formattedList = topResults.map(b => {
+        const waText = b.hasWhatsApp ? `WhatsApp: +${b.whatsapp_number}` : "Phone: Call Only";
+        const webText = b.websiteStatus === "Yes" ? "Has Website" : "NO Website";
+        return `• ${b.name} (${b.city})\n  Rating: ${b.rating}★ (${b.reviewCount} reviews) | ${waText} | ${webText}`;
+      }).join("\n\n");
+
+      const locationLabel = matchedLocation ? ` in ${matchedLocation.toUpperCase()}` : "";
       return {
-        text: `Across our nationwide database, ${noWebsiteLeads.length} out of ${totalCount} car detailing studios (${percentage}%) have NO official website!\n\nTop website-less prospects right now:\n${topList}`,
-        options: ["Show high-priority prospects", "Top leads in Delhi", "Connect on WhatsApp"]
+        text: `Found ${matches.length} verified automotive businesses${locationLabel}:\n\n${formattedList}\n\nSelect a studio from the table or click below to explore:`,
+        options: [
+          "Detailing without websites in Chandigarh",
+          "Find PPF installers in Mumbai",
+          "Verified WhatsApp in Gurugram",
+          "Connect on WhatsApp"
+        ]
       };
     }
 
     // 3. High Priority / Hot Leads
     if (query.includes("high priority") || query.includes("hot") || query.includes("best leads") || query.includes("top prospects")) {
-      const top5 = highPriorityLeads.slice(0, 4);
-      const topList = top5.map(b => `• ${b.name} (${b.city}) — Score: ${b.opportunityScore}/100 | Phone: ${b.phone || 'GMB direct'}`).join("\n");
+      const top4 = highPriorityLeads.slice(0, 4);
+      const topList = top4.map(b => `• ${b.name} (${b.city}) — Score: ${b.opportunityScore}/100 | ${b.hasWhatsApp ? `WA: +${b.whatsapp_number}` : `Call: ${b.phone}`}`).join("\n");
       return {
-        text: `We have ${highPriorityLeads.length} High-Priority prospects with Opportunity Scores of 80–100/100.\n\nTop matches:\n${topList}\n\nThese studios have 4.5+ star ratings, 50+ customer reviews, and immediate budget for website and booking automation.`,
-        options: ["How many leads have no website?", "Show top leads in Karnataka", "Connect on WhatsApp"]
+        text: `We have ${highPriorityLeads.length} High-Priority prospects with Opportunity Scores of 80–100/100 across India:\n\n${topList}\n\nThese studios possess 4.4+ star ratings, 100+ customer reviews, and no official website.`,
+        options: ["Detailing without websites in Chandigarh", "Find PPF installers in Mumbai", "Connect on WhatsApp"]
       };
     }
 
-    // 4. State / City specific queries
-    const stateMatches = businesses.filter(b => 
-      query.includes(b.state?.toLowerCase() || "") || 
-      query.includes(b.city?.toLowerCase() || "") ||
-      query.includes(b.locality?.toLowerCase() || "")
-    );
-
-    if (stateMatches.length > 0 && (query.includes("state") || query.includes("lead") || query.includes("in ") || query.includes("show") || stateMatches.length < 50)) {
-      const matchedCity = stateMatches[0].city || stateMatches[0].state;
-      const matchedNoWeb = stateMatches.filter(b => b.websiteStatus === "No" || b.websiteStatus === "Unverified");
-      const sample = stateMatches.slice(0, 4).map(b => `• ${b.name} (${b.city}) — ${b.websiteStatus === "Yes" ? "Has site" : "No website"} | Phone: ${b.phone}`).join("\n");
-      return {
-        text: `Found ${stateMatches.length} verified detailing studios in ${matchedCity} and surrounding region (${matchedNoWeb.length} without websites):\n\n${sample}`,
-        options: ["Show high-priority prospects", "How many leads have no website?", "Connect on WhatsApp"]
-      };
-    }
-
-    // 5. Pitch help
-    if (query.includes("pitch") || query.includes("script") || query.includes("whatsapp message")) {
+    // 4. Pitch help
+    if (query.includes("pitch") || query.includes("script")) {
       return {
         text: `For website-less car detailing studios, pitch high-ticket customer loss: "Hi [Name], seeing your 4.8★ reviews in [City], premium BMW/Audi car owners looking for PPF & Ceramic Coating search on Google, but cannot find your official price list and booking page. We built a live interactive demo for [Name] that can capture 15+ high-ticket clients every month."`,
-        options: ["High-priority prospects", "How many leads have no website?", "Connect on WhatsApp"]
+        options: ["High-priority prospects", "Find ceramic coating in Bengaluru", "Connect on WhatsApp"]
       };
     }
 
-    // 6. Total count / general stats
+    // 5. Total count / general stats
     if (query.includes("total") || query.includes("count") || query.includes("all leads") || query.includes("database")) {
+      const withWA = businesses.filter(b => b.hasWhatsApp && b.whatsapp_number).length;
       return {
-        text: `LocalLead AI is actively monitoring ${totalCount} verified car detailing studios across all 36 Indian States and Union Territories.\n• No Website: ${noWebsiteLeads.length} studios\n• High Priority: ${highPriorityLeads.length} studios\n• 100% deduplicated with verified phone numbers.`,
-        options: ["How many leads have no website?", "Show top leads in Maharashtra", "Connect on WhatsApp"]
+        text: `LocalLead AI is actively monitoring ${totalCount} verified automotive businesses across all 36 Indian States and Union Territories:\n• Without Website: ${noWebsiteLeads.length} studios\n• Verified WhatsApp: ${withWA} studios\n• High Priority (Score 80+): ${highPriorityLeads.length} studios\n• 100% deduplicated with Google Place IDs.`,
+        options: ["Find PPF installers in Mumbai", "Detailing without websites in Chandigarh", "Connect on WhatsApp"]
       };
     }
 
     // Default Fallback
     return {
-      text: `I can look up live verified data for all 36 Indian states, locate studios without websites, reveal competitor gaps, or connect you with our Virtual Agency deployment team. Try asking one of the options below:`,
+      text: `I can search real verified automotive detailing data across all 36 Indian states. Try asking:`,
       options: [
-        "How many leads have no website?",
-        "High-priority prospects",
-        "Show top leads in Maharashtra",
-        "Connect on WhatsApp"
+        "Find PPF installers in Mumbai",
+        "Find ceramic coating in Bengaluru",
+        "Find car washing studios in Pune",
+        "Detailing without websites in Chandigarh",
+        "Verified WhatsApp in Gurugram"
       ]
     };
   };
@@ -148,7 +228,6 @@ export function FloatingAIChatbot({ businesses = [], onSelectBusiness }) {
     setMessages(prev => [...prev, userMsg]);
     setInputMessage("");
 
-    // Simulate snappy AI response
     setTimeout(() => {
       const response = processQuery(textToSend);
       const aiMsg = {
@@ -160,7 +239,7 @@ export function FloatingAIChatbot({ businesses = [], onSelectBusiness }) {
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       };
       setMessages(prev => [...prev, aiMsg]);
-    }, 350);
+    }, 300);
   };
 
   const handleKeyPress = (e) => {
@@ -211,7 +290,7 @@ export function FloatingAIChatbot({ businesses = [], onSelectBusiness }) {
                   Virtual Agency AI
                 </div>
                 <div className="chatbot-status">
-                  Active • 36 States Scanned
+                  Active • 36 States Monitored
                 </div>
               </div>
             </div>
@@ -312,7 +391,7 @@ export function FloatingAIChatbot({ businesses = [], onSelectBusiness }) {
             <input
               type="text"
               className="chatbot-input-field"
-              placeholder="Ask about states, no-website leads..."
+              placeholder="e.g. PPF in Mumbai, no site in Chandigarh..."
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyPress}
@@ -331,4 +410,3 @@ export function FloatingAIChatbot({ businesses = [], onSelectBusiness }) {
     </>
   );
 }
-

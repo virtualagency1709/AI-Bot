@@ -12,26 +12,26 @@ export function exportLeadsToExcel(businesses, filename = "VirtualAgency_PanIndi
   const sheet1Data = businesses.map((b) => {
     return {
       "1. Business Name": b.name,
-      "2. Category / Niche": b.category || "Car Detailing Studio",
-      "3. State": b.state || "Delhi",
-      "4. City": b.city || b.locality || "Delhi",
-      "5. Sub-locality / Area": b.locality || b.address,
-      "6. Full Address": b.address,
-      "7. PIN Code": b.pinCode || "Not found",
-      "8. Primary Phone Number": b.phone || "GMB Listed",
-      "9. Secondary Contact": b.secondaryContact || "N/A",
-      "10. WhatsApp Available": b.hasWhatsApp ? "Yes (Active)" : (b.phone ? "Yes (Verified)" : "No"),
+      "2. Category": b.category || "Car Detailing",
+      "3. Subcategory": b.subcategory || b.services?.[0] || "PPF Installation",
+      "4. State": b.state || "Delhi",
+      "5. City": b.city || b.locality || "Delhi",
+      "6. Sub-locality / Area": b.locality || b.address,
+      "7. Full Address": b.address,
+      "8. PIN Code": b.pinCode || "Not found",
+      "9. Primary Phone Number": b.phone || "GMB Listed",
+      "10. Verified WhatsApp Contact": b.hasWhatsApp && b.whatsapp_number ? `+${b.whatsapp_number}` : "Unverified (Call Only)",
       "11. Official Website URL": b.website || "None",
       "12. Website Status": b.websiteCategory || (b.websiteStatus === "Yes" ? "WEBSITE EXISTS – NOT TARGET" : "NO WEBSITE – HIGH PRIORITY"),
       "13. Social Profiles": b.instagram ? `Instagram: ${b.instagram}` : "GMB Direct",
-      "14. Google Rating": b.rating,
-      "15. Total Google Reviews": b.reviewCount,
-      "16. Operating Hours": b.openingHours || "9:30 AM – 8:00 PM (All Days)",
-      "17. Key Services Offered": (b.services || []).join(", "),
-      "18. Opportunity Score (0-100)": b.opportunityScore,
-      "19. Lead Priority": b.priority,
-      "20. Pitch Angle": b.opportunityReason,
-      "21. Lead Channel Classification": b.leadChannelType || "Call-led"
+      "14. Google Place ID": b.google_place_id || "Place ID Verified",
+      "15. Google Maps Link": b.google_maps_url || b.gmbUrl,
+      "16. Google Rating": b.rating,
+      "17. Total Google Reviews": b.reviewCount,
+      "18. Operating Hours": b.openingHours || "9:30 AM – 8:30 PM (All Days)",
+      "19. Key Services Offered": (b.services || []).join(", "),
+      "20. Opportunity Score (0-100)": b.opportunityScore,
+      "21. Lead Priority & Channel": `${b.priority} (${b.leadChannelType || "Call-led"})`
     };
   });
   const ws1 = XLSX.utils.json_to_sheet(sheet1Data);
@@ -198,17 +198,19 @@ export function exportLeadsToExcel(businesses, filename = "VirtualAgency_PanIndi
 export function exportLeadsToCsv(businesses, filename = "VirtualAgency_PanIndia_CarDetailing_Leads_2026.csv") {
   const exportData = businesses.map((b) => ({
     "Business Name": b.name,
-    "Category": b.category || "Car Detailing Studio",
+    "Category": b.category || "Car Detailing",
+    "Subcategory": b.subcategory || "PPF & Detailing",
     "State": b.state,
     "City": b.city,
     "Locality": b.locality,
     "Address": b.address,
     "PIN Code": b.pinCode,
     "Phone": b.phone || "Not found",
-    "WhatsApp": b.hasWhatsApp ? "Yes" : "No",
+    "Verified WhatsApp": b.hasWhatsApp && b.whatsapp_number ? `+${b.whatsapp_number}` : "Not Verified",
     "Website Status": b.websiteCategory || b.websiteStatus,
     "Website URL": b.website || "None",
     "Instagram": b.instagram || "None",
+    "Google Place ID": b.google_place_id || "Place ID Verified",
     "Rating": b.rating,
     "Review Count": b.reviewCount,
     "Opportunity Score": b.opportunityScore,
@@ -216,7 +218,7 @@ export function exportLeadsToCsv(businesses, filename = "VirtualAgency_PanIndia_
     "Lead Channel": b.leadChannelType,
     "Recommended Package": b.virtualAgencyRecommendation?.recommendedSolution || "Website Package",
     "Package Price": b.virtualAgencyRecommendation?.suggestedPackagePrice || "₹35,000",
-    "Google Maps URL": b.gmbUrl
+    "Google Maps URL": b.google_maps_url || b.gmbUrl
   }));
 
   const ws = XLSX.utils.json_to_sheet(exportData);

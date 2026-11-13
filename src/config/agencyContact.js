@@ -18,38 +18,72 @@ export const VIRTUAL_AGENCY_CONTACT = {
   whatsappUrl: "https://wa.me/917838056998?text=Hello%20Virtual%20Agency%2C%20I%20am%20interested%20in%20your%20services.",
   email: "info@virtualagency.in",
   headquarters: "New Delhi, India",
-  getWhatsAppUrl(messageText = "Hello, I am interested in your services.") {
+  getWhatsAppUrl(messageText = "Hello Virtual Agency, I am interested in car detailing lead acquisition and website solutions.") {
     const encodedMsg = messageText ? `?text=${encodeURIComponent(messageText)}` : "";
     return `https://wa.me/917838056998${encodedMsg}`;
   }
 };
 
 /**
- * Generates clean WhatsApp deep link using 12-digit international format (91XXXXXXXXXX)
- * without duplicate country codes.
+ * Validates whether a phone string contains a valid 10-digit Indian mobile number
+ * (Indian mobile numbers start with 6, 7, 8, or 9).
  */
-export function buildWhatsAppLink(rawPhone, messageText = "") {
-  if (!rawPhone) return null;
+export function isValidIndianMobile(rawPhone) {
+  if (!rawPhone) return false;
   const digits = String(rawPhone).replace(/[^0-9]/g, "");
-  if (!digits) return null;
-
-  let formattedNumber = digits;
+  let mobile10 = "";
   if (digits.startsWith("9191") && digits.length >= 14) {
-    formattedNumber = digits.slice(2);
+    mobile10 = digits.slice(4, 14);
   } else if (digits.startsWith("91") && digits.length === 12) {
-    formattedNumber = digits;
+    mobile10 = digits.slice(2);
   } else if (digits.startsWith("0") && digits.length === 11) {
-    formattedNumber = `91${digits.slice(1)}`;
+    mobile10 = digits.slice(1);
   } else if (digits.length === 10) {
-    formattedNumber = `91${digits}`;
-  } else if (!digits.startsWith("91")) {
-    formattedNumber = `91${digits}`;
+    mobile10 = digits;
   }
-
-  const encodedMsg = messageText ? `?text=${encodeURIComponent(messageText)}` : "";
-  return `https://wa.me/${formattedNumber}${encodedMsg}`;
+  return /^[6-9]\d{9}$/.test(mobile10);
 }
 
+/**
+ * Normalizes Indian phone numbers into standard 10-digit format.
+ * Returns null if the number is a landline or invalid.
+ */
+export function extract10DigitMobile(rawPhone) {
+  if (!rawPhone) return null;
+  const digits = String(rawPhone).replace(/[^0-9]/g, "");
+  let mobile10 = "";
+  if (digits.startsWith("9191") && digits.length >= 14) {
+    mobile10 = digits.slice(4, 14);
+  } else if (digits.startsWith("91") && digits.length === 12) {
+    mobile10 = digits.slice(2);
+  } else if (digits.startsWith("0") && digits.length === 11) {
+    mobile10 = digits.slice(1);
+  } else if (digits.length === 10) {
+    mobile10 = digits;
+  }
+  return /^[6-9]\d{9}$/.test(mobile10) ? mobile10 : null;
+}
+
+/**
+ * Generates clean WhatsApp deep link using strict international format:
+ * https://wa.me/91XXXXXXXXXX?text=...
+ * Requirements:
+ * 1. 10-digit Indian mobile number after country code 91.
+ * 2. Zero spaces, brackets, hyphens or plus signs.
+ * 3. Never converts landlines or unverified numbers.
+ * 4. Returns null if number is not a verified WhatsApp mobile.
+ */
+export function buildWhatsAppLink(rawPhone, messageText = "") {
+  const mobile10 = extract10DigitMobile(rawPhone);
+  if (!mobile10) return null;
+
+  const encodedMsg = messageText ? `?text=${encodeURIComponent(messageText)}` : "";
+  return `https://wa.me/91${mobile10}${encodedMsg}`;
+}
+
+/**
+ * Shortcut helper for Virtual Agency sales inquiry.
+ */
 export function getWhatsAppUrl(messageText = "") {
   return VIRTUAL_AGENCY_CONTACT.getWhatsAppUrl(messageText);
 }
